@@ -1,0 +1,24 @@
+{
+  "name": "quintal-gourmet-pdv",
+  "version": "1.1.0",
+  "description": "PDV do Quintal Gourmet — roda local com planilha Excel ou publicado na Vercel com Postgres (Supabase).",
+  "main": "servidor/local.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node servidor/local.js",
+    "semear": "node servidor/semear.js",
+    "resetar": "node servidor/semear.js --forcar",
+    "migrar": "node banco/migrar.js",
+    "migrar:recarregar": "node banco/migrar.js --recarregar",
+    "migrar:esquema": "node banco/migrar.js --so-esquema"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1",
+    "pg": "^8.23.0"
+  }
+}

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quintal Gourmet · PDV</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%A5%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+  <div class="aplicativo">
+    <nav class="trilho" id="trilho"></nav>
+
+    <header class="topo">
+      <div>
+        <h1 id="titulo-pagina">Painel</h1>
+        <div class="subtitulo" id="subtitulo-pagina"></div>
+      </div>
+
+      <div class="topo-direita">
+        <div class="relogio" id="relogio"><small>carregando</small></div>
+        <button class="selo-caixa" id="selo-caixa" title="Situação do caixa">
+          <span class="ponto apagado"></span>
+          <span>Caixa</span>
+        </button>
+        <div class="usuario-chip">
+          <div class="avatar" id="avatar">?</div>
+          <div class="dados">
+            <b id="nome-usuario">—</b>
+            <small id="perfil-usuario">—</small>
+          </div>
+          <button class="fechar" id="sair" title="Sair do sistema" style="border:none">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="conteudo" id="conteudo"></main>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrar · Quintal Gourmet PDV</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%A5%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+  <main class="tela-login">
+
+    <section class="login-arte">
+      <div class="marca revelar" style="--i:0">
+        <div class="marca-selo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff7a34" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2c1.5 3.6-.8 5-2.2 6.6-1.6 1.8-2.4 3.4-2.4 5.2A4.6 4.6 0 0 0 12 18.4a4.6 4.6 0 0 0 4.6-4.6c0-2.4-1.4-3.6-2.2-5.4"/>
+            <path d="M12 22c-3.3 0-6-2.1-6-5"/>
+            <path d="M12 22c3.3 0 6-2.1 6-5"/>
+          </svg>
+        </div>
+        <div>
+          <div class="marca-nome">Quintal Gourmet</div>
+          <div class="marca-sub">Defumados &amp; Artesanais</div>
+        </div>
+      </div>
+
+      <div class="login-frase">
+        <h1 class="revelar" style="--i:1">
+          O balcão<br>na <em>brasa</em>,<br>o caixa<br>no controle.
+        </h1>
+        <p class="revelar" style="--i:2">
+          Frente de caixa, estoque, perdas e lucro em um só lugar — rodando
+          direto na sua máquina, sem depender de internet nem de mensalidade.
+        </p>
+      </div>
+
+      <div class="login-rodape revelar" style="--i:3">
+        <div>Base de dados<strong>Excel local</strong></div>
+        <div>Modo<strong>Simulação</strong></div>
+        <div>Versão<strong>1.0</strong></div>
+      </div>
+    </section>
+
+    <section class="login-forma">
+      <div class="revelar" style="--i:1">
+        <h2>Bom trabalho hoje.</h2>
+        <p class="intro">Identifique-se para abrir o sistema.</p>
+      </div>
+
+      <div id="erro" hidden class="aviso-erro"></div>
+
+      <form id="formulario" class="revelar" style="--i:2" autocomplete="off">
+        <div class="campo">
+          <label for="usuario">Usuário</label>
+          <input id="usuario" name="usuario" type="text" placeholder="ex.: caixa" autofocus required>
+        </div>
+        <div class="campo">
+          <label for="senha">Senha</label>
+          <input id="senha" name="senha" type="password" placeholder="••••••••" required>
+        </div>
+        <button class="botao botao-brasa botao-largo" type="submit" id="entrar">
+          Entrar no sistema
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </form>
+
+      <div class="acessos-demo revelar" style="--i:3">
+        <div class="rotulo" style="margin-bottom:12px">Acessos de demonstração</div>
+        <button class="acesso-chip" data-usuario="admin" data-senha="admin123" type="button">
+          <span><b>Administrador</b><br><small class="fraco">Estoque, lucros, cadastros e caixa</small></span>
+          <code>admin / admin123</code>
+        </button>
+        <button class="acesso-chip" data-usuario="caixa" data-senha="caixa123" type="button">
+          <span><b>Operador de caixa</b><br><small class="fraco">Somente venda, consulta e caixa</small></span>
+          <code>caixa / caixa123</code>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { api, guardarSessao } from './js/api.js';
+
+    const formulario = document.getElementById('formulario');
+    const erro = document.getElementById('erro');
+    const botao = document.getElementById('entrar');
+
+    document.querySelectorAll('.acesso-chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        document.getElementById('usuario').value = chip.dataset.usuario;
+        document.getElementById('senha').value = chip.dataset.senha;
+        formulario.requestSubmit();
+      });
+    });
+
+    formulario.addEventListener('submit', async (evento) => {
+      evento.preventDefault();
+      erro.hidden = true;
+      botao.disabled = true;
+      botao.textContent = 'Verificando...';
+      try {
+        const dados = await api('/api/login', {
+          metodo: 'POST',
+          corpo: {
+            usuario: document.getElementById('usuario').value.trim(),
+            senha: document.getElementById('senha').value,
+          },
+          semSessao: true,
+        });
+        guardarSessao(dados);
+        location.href = 'app.html';
+      } catch (falha) {
+        erro.textContent = falha.message;
+        erro.hidden = false;
+        erro.classList.remove('aviso-erro');
+        void erro.offsetWidth;
+        erro.classList.add('aviso-erro');
+        botao.disabled = false;
+        botao.textContent = 'Entrar no sistema';
+        document.getElementById('senha').select();
+      }
+    });
+  </script>
+</body>
+</html>

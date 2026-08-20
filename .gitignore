@@ -1,0 +1,17 @@
+# dependências
+node_modules/
+
+# segredos — nunca versionar
+.env
+.env.local
+.env.*.local
+
+# base de dados local gerada pelo sistema
+dados/*.xlsx
+dados/*.tmp
+
+# ferramentas
+.vercel/
+*.log
+.DS_Store
+Thumbs.db

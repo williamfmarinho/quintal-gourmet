@@ -3,15 +3,16 @@ node_modules/
 
 # segredos — nunca versionar
 .env
-.env.local
-.env.*.local
+.env*.local
+.env.*
+!.env.example
 
 # base de dados local gerada pelo sistema
 dados/*.xlsx
 dados/*.tmp
 
 # ferramentas
-.vercel/
+.vercel
 *.log
 .DS_Store
 Thumbs.db

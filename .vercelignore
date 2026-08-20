@@ -1,0 +1,5 @@
+# arquivos que não fazem parte da versão publicada
+dados/
+banco/origem/
+.env.local
+*.log

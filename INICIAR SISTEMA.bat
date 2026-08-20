@@ -28,6 +28,10 @@ echo   Abrindo o sistema no navegador...
 echo   Para encerrar, feche esta janela ou tecle Ctrl + C.
 echo.
 
+REM Este atalho roda sempre no modo local, com a planilha Excel: funciona
+REM sem internet, mesmo que exista um banco configurado no .env.local.
+set ARMAZENAMENTO=excel
+
 node servidor/local.js
 
 echo.

@@ -29,12 +29,14 @@ const ABAS_EXPORTACAO = {
 };
 
 const app = express();
+const rotas = express.Router();
+
 app.disable('x-powered-by');
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, '..', 'public'), { extensions: ['html'] }));
 
 /** Abre (ou reaproveita) o armazenamento antes de qualquer rota da API. */
-app.use('/api', async (req, res, proximo) => {
+rotas.use(async (req, res, proximo) => {
   try {
     req.repo = await abrirArmazenamento();
     proximo();
@@ -61,7 +63,7 @@ function responder(manipulador) {
  * Sessão
  * ------------------------------------------------------------------ */
 
-app.post('/api/login', responder(async (req) => {
+rotas.post('/login', responder(async (req) => {
   const login = String(req.body.usuario || '').trim().toLowerCase();
   const senha = String(req.body.senha || '');
 
@@ -86,9 +88,9 @@ app.post('/api/login', responder(async (req) => {
 }));
 
 // Com token assinado não há estado no servidor: sair é descartar o token no cliente.
-app.post('/api/logout', responder(async () => ({ ok: true })));
+rotas.post('/logout', responder(async () => ({ ok: true })));
 
-app.get('/api/sessao', auth.exigirLogin, responder(async (req) => {
+rotas.get('/sessao', auth.exigirLogin, responder(async (req) => {
   const caixa = await dominio.caixaAbertoDe(req.repo, req.sessao.usuario);
   return {
     usuario: { usuario: req.sessao.usuario, nome: req.sessao.nome, perfil: req.sessao.perfil },
@@ -101,15 +103,15 @@ app.get('/api/sessao', auth.exigirLogin, responder(async (req) => {
  * Produtos
  * ------------------------------------------------------------------ */
 
-app.get('/api/produtos', auth.exigirLogin, responder(async (req) => ({
+rotas.get('/produtos', auth.exigirLogin, responder(async (req) => ({
   produtos: await dominio.listarProdutos(req.repo, req.query),
   categorias: await dominio.categorias(req.repo),
 })));
 
-app.get('/api/produtos/:codigo', auth.exigirLogin, responder(async (req) =>
+rotas.get('/produtos/:codigo', auth.exigirLogin, responder(async (req) =>
   dominio.fichaProduto(req.repo, req.params.codigo)));
 
-app.post('/api/produtos', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => ({
+rotas.post('/produtos', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => ({
   produto: await dominio.salvarProduto(req.repo, req.body, req.sessao),
 })));
 
@@ -117,19 +119,19 @@ app.post('/api/produtos', auth.exigirLogin, auth.exigirAdmin, responder(async (r
  * Vendas
  * ------------------------------------------------------------------ */
 
-app.post('/api/vendas', auth.exigirLogin, responder(async (req) =>
+rotas.post('/vendas', auth.exigirLogin, responder(async (req) =>
   dominio.registrarVenda(req.repo, req.body, req.sessao)));
 
-app.get('/api/vendas', auth.exigirLogin, responder(async (req) => {
+rotas.get('/vendas', auth.exigirLogin, responder(async (req) => {
   const consulta = { ...req.query };
   if (req.sessao.perfil !== 'admin') consulta.operador = req.sessao.usuario;
   return { vendas: await dominio.listarVendas(req.repo, consulta) };
 }));
 
-app.get('/api/vendas/:id', auth.exigirLogin, responder(async (req) =>
+rotas.get('/vendas/:id', auth.exigirLogin, responder(async (req) =>
   dominio.detalharVenda(req.repo, req.params.id)));
 
-app.post('/api/vendas/:id/cancelar', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => ({
+rotas.post('/vendas/:id/cancelar', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => ({
   venda: await dominio.cancelarVenda(req.repo, req.params.id, req.body.motivo, req.sessao),
 })));
 
@@ -137,51 +139,51 @@ app.post('/api/vendas/:id/cancelar', auth.exigirLogin, auth.exigirAdmin, respond
  * Estoque
  * ------------------------------------------------------------------ */
 
-app.get('/api/entradas', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => ({
+rotas.get('/entradas', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => ({
   entradas: await dominio.listarEntradas(req.repo, req.query),
 })));
 
-app.post('/api/entradas', auth.exigirLogin, auth.exigirAdmin, responder(async (req) =>
+rotas.post('/entradas', auth.exigirLogin, auth.exigirAdmin, responder(async (req) =>
   dominio.registrarEntrada(req.repo, req.body, req.sessao)));
 
-app.get('/api/saidas', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => ({
+rotas.get('/saidas', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => ({
   saidas: await dominio.listarSaidas(req.repo, req.query),
   tipos: dominio.TIPOS_SAIDA,
 })));
 
-app.post('/api/saidas', auth.exigirLogin, auth.exigirAdmin, responder(async (req) =>
+rotas.post('/saidas', auth.exigirLogin, auth.exigirAdmin, responder(async (req) =>
   dominio.registrarSaidaNaoVenda(req.repo, req.body, req.sessao)));
 
-app.get('/api/ajustes', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => ({
+rotas.get('/ajustes', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => ({
   ajustes: await dominio.listarAjustes(req.repo, req.query),
   motivos: dominio.MOTIVOS_AJUSTE,
 })));
 
-app.post('/api/ajustes', auth.exigirLogin, auth.exigirAdmin, responder(async (req) =>
+rotas.post('/ajustes', auth.exigirLogin, auth.exigirAdmin, responder(async (req) =>
   dominio.registrarAjuste(req.repo, req.body, req.sessao)));
 
 /* ------------------------------------------------------------------ *
  * Caixa
  * ------------------------------------------------------------------ */
 
-app.get('/api/caixa', auth.exigirLogin, responder(async (req) => {
+rotas.get('/caixa', auth.exigirLogin, responder(async (req) => {
   const caixa = await dominio.caixaAbertoDe(req.repo, req.sessao.usuario);
   return { caixa: caixa ? await dominio.resumoCaixa(req.repo, caixa) : null };
 }));
 
-app.post('/api/caixa/abrir', auth.exigirLogin, responder(async (req) => ({
+rotas.post('/caixa/abrir', auth.exigirLogin, responder(async (req) => ({
   caixa: await dominio.abrirCaixa(req.repo, req.body.valor_abertura, req.sessao),
 })));
 
-app.post('/api/caixa/movimento', auth.exigirLogin, responder(async (req) => ({
+rotas.post('/caixa/movimento', auth.exigirLogin, responder(async (req) => ({
   caixa: await dominio.movimentarCaixa(req.repo, req.body, req.sessao),
 })));
 
-app.post('/api/caixa/fechar', auth.exigirLogin, responder(async (req) => ({
+rotas.post('/caixa/fechar', auth.exigirLogin, responder(async (req) => ({
   caixa: await dominio.fecharCaixa(req.repo, req.body, req.sessao),
 })));
 
-app.get('/api/caixas', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => ({
+rotas.get('/caixas', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => ({
   caixas: await req.repo.listar('caixas', { ordem: { campo: 'id', desc: true } }),
 })));
 
@@ -189,16 +191,16 @@ app.get('/api/caixas', auth.exigirLogin, auth.exigirAdmin, responder(async (req)
  * Relatórios
  * ------------------------------------------------------------------ */
 
-app.get('/api/painel', auth.exigirLogin, responder(async (req) => dominio.painel(req.repo)));
+rotas.get('/painel', auth.exigirLogin, responder(async (req) => dominio.painel(req.repo)));
 
-app.get('/api/relatorios/lucro', auth.exigirLogin, auth.exigirAdmin, responder(async (req) =>
+rotas.get('/relatorios/lucro', auth.exigirLogin, auth.exigirAdmin, responder(async (req) =>
   dominio.relatorioLucro(req.repo, req.query)));
 
 /* ------------------------------------------------------------------ *
  * Usuários e configurações
  * ------------------------------------------------------------------ */
 
-app.get('/api/usuarios', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => {
+rotas.get('/usuarios', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => {
   const usuarios = await req.repo.listar('usuarios', { ordem: { campo: 'usuario' } });
   return {
     usuarios: usuarios.map((u) => ({
@@ -208,7 +210,7 @@ app.get('/api/usuarios', auth.exigirLogin, auth.exigirAdmin, responder(async (re
   };
 }));
 
-app.post('/api/usuarios', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => {
+rotas.post('/usuarios', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => {
   const login = String(req.body.usuario || '').trim().toLowerCase();
   if (!login) throw new dominio.ErroDeNegocio('Informe o login do usuário.');
   const perfil = req.body.perfil === 'admin' ? 'admin' : 'operador';
@@ -239,7 +241,7 @@ app.post('/api/usuarios', auth.exigirLogin, auth.exigirAdmin, responder(async (r
   return { ok: true };
 }));
 
-app.get('/api/config', auth.exigirLogin, responder(async (req) => {
+rotas.get('/config', auth.exigirLogin, responder(async (req) => {
   const config = await req.repo.config();
   return {
     config: Object.entries(config).map(([chave, valor]) => ({ chave, valor })),
@@ -248,7 +250,7 @@ app.get('/api/config', auth.exigirLogin, responder(async (req) => {
   };
 }));
 
-app.post('/api/config', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => {
+rotas.post('/config', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => {
   await req.repo.transacao((tx) => tx.definirConfig(req.body || {}));
   const config = await req.repo.config();
   return {
@@ -261,7 +263,7 @@ app.post('/api/config', auth.exigirLogin, auth.exigirAdmin, responder(async (req
  * Exportação da base em Excel
  * ------------------------------------------------------------------ */
 
-app.get('/api/exportar', auth.exigirLogin, auth.exigirAdmin, responder(async (req, res) => {
+rotas.get('/exportar', auth.exigirLogin, auth.exigirAdmin, responder(async (req, res) => {
   const tabelas = {};
   for (const [aba, tabela] of Object.entries(ABAS_EXPORTACAO)) {
     tabelas[aba] = await req.repo.listar(tabela);
@@ -276,7 +278,7 @@ app.get('/api/exportar', auth.exigirLogin, auth.exigirAdmin, responder(async (re
 }));
 
 /** Diagnóstico simples — útil para conferir a implantação. */
-app.get('/api/saude', responder(async (req) => {
+rotas.get('/saude', responder(async (req) => {
   const produtos = await req.repo.listar('produtos', { limite: 1 });
   return {
     ok: true,
@@ -286,6 +288,11 @@ app.get('/api/saude', responder(async (req) => {
   };
 }));
 
-app.use('/api', (req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
+rotas.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
+
+// As rotas respondem com e sem o prefixo /api: localmente o caminho chega
+// completo; na Vercel, a reescrita pode entregá-lo já sem o prefixo.
+app.use('/api', rotas);
+app.use(rotas);
 
 module.exports = app;

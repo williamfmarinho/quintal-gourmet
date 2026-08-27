@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Calculadora de churrasco do Quintal Gourmet: diga quem senta a mesa e receba a lista fechada, peca por peca, com os precos do balcao.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%A5%3C/text%3E%3C/svg%3E">
+<title>Medida da Brasa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,400&family=Familjen+Grotesk:wght@400;500;600;700&family=Azeret+Mono:wght@400;500;600;700&display=swap">
+
+<style>
+  :root {
+    --carvao-950: #0b0908;
+    --carvao-900: #110d0b;
+    --carvao-850: #17110e;
+    --carvao-800: #1d1613;
+    --carvao-700: #251c17;
+    --carvao-600: #33261f;
+
+    --brasa: #e2542a;
+    --brasa-viva: #ff7a34;
+    --dourado: #e0a33c;
+    --oliva: #93a55f;
+
+    --creme: #f4ead9;
+    --creme-medio: #cbbaa4;
+    --creme-fraco: #8c7c6a;
+    --papel: #f7f1e4;
+    --tinta: #241a15;
+    --tinta-fraca: #7a6a5d;
+
+    --borda: #2e231d;
+    --borda-forte: #453227;
+
+    --fonte-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+    --fonte-ui: 'Familjen Grotesk', 'Segoe UI', 'Trebuchet MS', sans-serif;
+    --fonte-mono: 'Azeret Mono', 'Cascadia Mono', Consolas, monospace;
+
+    --raio: 14px;
+    --raio-p: 9px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: var(--fonte-ui);
+    color: var(--creme);
+    background-color: var(--carvao-950);
+    background-image:
+      radial-gradient(900px 520px at 12% -8%, rgba(226, 84, 42, .17), transparent 62%),
+      radial-gradient(700px 420px at 92% 4%, rgba(224, 163, 60, .10), transparent 60%);
+    background-attachment: fixed;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .envelope {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(24px, 5vw, 64px) clamp(18px, 4vw, 44px) 72px;
+  }
+
+  /* ---------- cabecalho ---------- */
+
+  .marca {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 26px;
+    border-bottom: 1px solid var(--borda);
+  }
+
+  .marca-selo {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--borda-forte);
+    border-radius: 11px;
+    background: linear-gradient(160deg, var(--carvao-700), var(--carvao-900));
+    box-shadow: 0 0 26px -8px rgba(226, 84, 42, .6);
+    flex: none;
+  }
+
+  .marca-nome {
+    font-family: var(--fonte-display);
+    font-weight: 900;
+    font-size: 17px;
+    letter-spacing: .01em;
+    line-height: 1.1;
+  }
+
+  .marca-sub {
+    font-size: 12px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--creme-fraco);
+  }
+
+  .abertura {
+    display: grid;
+    gap: 22px;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+    align-items: end;
+    padding: clamp(30px, 5vw, 54px) 0 clamp(26px, 4vw, 44px);
+  }
+
+  .abertura h1 {
+    margin: 0;
+    font-family: var(--fonte-display);
+    font-weight: 900;
+    font-size: clamp(38px, 7.2vw, 76px);
+    line-height: .94;
+    letter-spacing: -.025em;
+    text-wrap: balance;
+  }
+
+  .abertura h1 em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--brasa-viva);
+  }
+
+  .abertura p {
+    margin: 0;
+    max-width: 46ch;
+    color: var(--creme-medio);
+    font-size: clamp(15px, 1.6vw, 17px);
+  }
+
+  /* ---------- mesa ---------- */
+
+  .mesa {
+    display: grid;
+    gap: clamp(22px, 3vw, 38px);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
+    align-items: start;
+  }
+
+  .controles {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  fieldset {
+    margin: 0;
+    padding: 20px;
+    border: 1px solid var(--borda);
+    border-radius: var(--raio);
+    background: linear-gradient(180deg, var(--carvao-850), var(--carvao-900));
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  legend {
+    padding: 0 8px;
+    margin-left: -4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--dourado);
+  }
+
+  .ajuda {
+    margin: 0;
+    font-size: 13px;
+    color: var(--creme-fraco);
+  }
+
+  /* contadores */
+
+  .contadores {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 12px;
+  }
+
+  .contador {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 12px 12px 16px;
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+    background: var(--carvao-800);
+  }
+
+  .contador-nome {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+  }
+
+  .contador-nome strong {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .contador-nome span {
+    font-size: 11.5px;
+    color: var(--creme-fraco);
+  }
+
+  .passo {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .passo button {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    font-family: var(--fonte-ui);
+    font-size: 18px;
+    line-height: 1;
+    color: var(--creme);
+    background: var(--carvao-700);
+    border: 1px solid var(--borda-forte);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+  }
+
+  .passo button:hover { background: var(--carvao-600); border-color: var(--brasa-fraca, #a83a1c); }
+  .passo button:disabled { opacity: .35; cursor: not-allowed; }
+
+  .passo output {
+    min-width: 34px;
+    text-align: center;
+    font-family: var(--fonte-mono);
+    font-weight: 600;
+    font-size: 17px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* fichas de escolha */
+
+  .fichas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .ficha {
+    padding: 9px 15px;
+    font-family: var(--fonte-ui);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--creme-medio);
+    background: var(--carvao-800);
+    border: 1px solid var(--borda);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+  }
+
+  .ficha:hover { color: var(--creme); border-color: var(--borda-forte); }
+
+  .ficha[aria-pressed="true"] {
+    color: var(--carvao-950);
+    background: linear-gradient(160deg, var(--brasa-viva), var(--brasa));
+    border-color: transparent;
+    font-weight: 600;
+  }
+
+  /* estilos de churrasco */
+
+  .estilos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 10px;
+  }
+
+  .estilo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 15px 16px;
+    text-align: left;
+    font-family: var(--fonte-ui);
+    color: var(--creme-medio);
+    background: var(--carvao-800);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+    cursor: pointer;
+    transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+  }
+
+  .estilo:hover { border-color: var(--borda-forte); transform: translateY(-1px); }
+
+  .estilo strong {
+    font-family: var(--fonte-display);
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--creme);
+  }
+
+  .estilo span { font-size: 12.5px; line-height: 1.4; }
+
+  .estilo[aria-pressed="true"] {
+    border-color: var(--brasa);
+    background: linear-gradient(180deg, rgba(226, 84, 42, .16), rgba(226, 84, 42, .04));
+  }
+
+  .estilo[aria-pressed="true"] strong { color: var(--brasa-viva); }
+
+  /* chaves */
+
+  .chaves { display: flex; flex-direction: column; gap: 10px; }
+
+  .chave {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 12px 15px;
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+    background: var(--carvao-800);
+    cursor: pointer;
+  }
+
+  .chave input { position: absolute; opacity: 0; pointer-events: none; }
+
+  .trilho {
+    position: relative;
+    flex: none;
+    width: 42px;
+    height: 24px;
+    border-radius: 999px;
+    background: var(--carvao-600);
+    border: 1px solid var(--borda-forte);
+    transition: background 180ms ease;
+  }
+
+  .trilho::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--creme-fraco);
+    transition: transform 180ms cubic-bezier(.2, .7, .3, 1), background 180ms ease;
+  }
+
+  .chave input:checked + .trilho { background: var(--brasa); border-color: var(--brasa); }
+  .chave input:checked + .trilho::after { transform: translateX(18px); background: var(--carvao-950); }
+
+  .chave-texto { display: flex; flex-direction: column; line-height: 1.25; }
+  .chave-texto strong { font-size: 14.5px; font-weight: 600; }
+  .chave-texto span { font-size: 12px; color: var(--creme-fraco); }
+
+  /* ---------- coluna do cupom ---------- */
+
+  .coluna-cupom {
+    position: sticky;
+    top: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .medidor {
+    padding: 16px 18px;
+    border: 1px solid var(--borda);
+    border-radius: var(--raio);
+    background: linear-gradient(180deg, var(--carvao-850), var(--carvao-900));
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .medidor-topo {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .medidor-topo b {
+    font-family: var(--fonte-mono);
+    font-size: 19px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .medidor-rotulo {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--creme-fraco);
+  }
+
+  .barra {
+    position: relative;
+    height: 9px;
+    border-radius: 999px;
+    background: var(--carvao-700);
+    overflow: hidden;
+  }
+
+  .barra i {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--brasa-fraca, #a83a1c), var(--brasa-viva));
+    transition: width 320ms cubic-bezier(.2, .7, .3, 1), background 320ms ease;
+  }
+
+  .barra.farto i { background: linear-gradient(90deg, var(--oliva), #b6c77f); }
+  .barra.curto i { background: linear-gradient(90deg, #7a3b30, var(--paprica, #c4413a)); }
+
+  .veredito { font-size: 13px; color: var(--creme-medio); }
+  .veredito b { color: var(--creme); font-weight: 600; }
+
+  /* cupom em papel */
+
+  .cupom {
+    position: relative;
+    padding: 26px 22px 30px;
+    color: var(--tinta);
+    background: var(--papel);
+    font-family: var(--fonte-mono);
+    font-size: 12.5px;
+    line-height: 1.5;
+    box-shadow: 0 30px 60px -22px rgba(0, 0, 0, .9);
+  }
+
+  .cupom::before,
+  .cupom::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 9px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9' viewBox='0 0 16 9'%3E%3Cpath d='M0 9 L8 0 L16 9 Z' fill='%23f7f1e4'/%3E%3C/svg%3E") repeat-x;
+  }
+
+  .cupom::before { top: -9px; }
+  .cupom::after { bottom: -9px; transform: scaleY(-1); }
+
+  .cupom-marca {
+    text-align: center;
+    font-family: var(--fonte-display);
+    font-weight: 900;
+    font-size: 17px;
+    letter-spacing: .06em;
+  }
+
+  .cupom-sub {
+    text-align: center;
+    font-size: 10.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--tinta-fraca);
+    margin-bottom: 14px;
+  }
+
+  .risco {
+    border: none;
+    border-top: 1px dashed rgba(36, 26, 21, .35);
+    margin: 12px 0;
+  }
+
+  .cupom-cabeca {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--tinta-fraca);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+
+  .linhas { display: flex; flex-direction: column; gap: 11px; }
+
+  .linha { display: grid; gap: 2px; }
+
+  .linha-nome {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+  }
+
+  .linha-nome span:last-child {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .linha-detalhe {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--tinta-fraca);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .selo-encomenda {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    font-size: 9.5px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #8a3b1c;
+    border: 1px solid rgba(168, 58, 28, .45);
+    border-radius: 4px;
+  }
+
+  .mexer { display: flex; gap: 4px; }
+
+  .mexer button {
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    font-family: var(--fonte-mono);
+    font-size: 13px;
+    line-height: 1;
+    color: var(--tinta);
+    background: transparent;
+    border: 1px solid rgba(36, 26, 21, .3);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 140ms ease, color 140ms ease;
+  }
+
+  .mexer button:hover { background: var(--tinta); color: var(--papel); }
+
+  .cupom-total {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--tinta);
+    color: var(--papel);
+    font-weight: 700;
+    letter-spacing: .04em;
+  }
+
+  .cupom-total span:last-child { font-size: 17px; font-variant-numeric: tabular-nums; }
+
+  .cupom-resumo {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 11px;
+    color: var(--tinta-fraca);
+  }
+
+  .cupom-resumo div { display: flex; justify-content: space-between; gap: 10px; font-variant-numeric: tabular-nums; }
+
+  .cupom-rodape {
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: .06em;
+    color: var(--tinta-fraca);
+    text-transform: uppercase;
+  }
+
+  .cupom-vazio {
+    text-align: center;
+    padding: 18px 6px;
+    color: var(--tinta-fraca);
+    font-size: 12px;
+  }
+
+  /* acoes */
+
+  .acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .botao {
+    flex: 1 1 150px;
+    padding: 12px 16px;
+    font-family: var(--fonte-ui);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--carvao-950);
+    background: linear-gradient(160deg, var(--brasa-viva), var(--brasa));
+    border: 1px solid transparent;
+    border-radius: var(--raio-p);
+    cursor: pointer;
+    transition: filter 160ms ease;
+  }
+
+  .botao:hover { filter: brightness(1.08); }
+
+  .botao.discreto {
+    flex: 0 1 auto;
+    color: var(--creme-medio);
+    background: var(--carvao-800);
+    border-color: var(--borda-forte);
+  }
+
+  .botao.discreto:hover { color: var(--creme); }
+
+  .caixa-copia {
+    display: none;
+    width: 100%;
+    min-height: 150px;
+    padding: 12px;
+    font-family: var(--fonte-mono);
+    font-size: 12px;
+    color: var(--creme);
+    background: var(--carvao-850);
+    border: 1px solid var(--borda-forte);
+    border-radius: var(--raio-p);
+    resize: vertical;
+  }
+
+  .caixa-copia.aberta { display: block; }
+
+  .aviso {
+    min-height: 18px;
+    font-size: 12.5px;
+    color: var(--oliva);
+  }
+
+  /* acrescentar item */
+
+  .acrescentar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .acrescentar select {
+    flex: 1 1 220px;
+    padding: 10px 12px;
+    font-family: var(--fonte-ui);
+    font-size: 14px;
+    color: var(--creme);
+    background: var(--carvao-800);
+    border: 1px solid var(--borda-forte);
+    border-radius: var(--raio-p);
+  }
+
+  .acrescentar select option { background: var(--carvao-800); color: var(--creme); }
+
+  /* rodape */
+
+  .notas {
+    margin-top: 46px;
+    padding-top: 22px;
+    border-top: 1px solid var(--borda);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    font-size: 12.5px;
+    color: var(--creme-fraco);
+  }
+
+  .notas h2 {
+    margin: 0 0 6px;
+    font-family: var(--fonte-ui);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--dourado);
+  }
+
+  .notas p { margin: 0; }
+
+  :where(button, select, input, textarea):focus-visible {
+    outline: 2px solid var(--brasa-viva);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 900px) {
+    .abertura { grid-template-columns: 1fr; align-items: start; }
+    .mesa { grid-template-columns: 1fr; }
+    .coluna-cupom { position: static; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+</head>
+<body>
+<div class="envelope">
+
+  <div class="marca">
+    <div class="marca-selo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff7a34" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 2c1.5 3.6-.8 5-2.2 6.6-1.6 1.8-2.4 3.4-2.4 5.2A4.6 4.6 0 0 0 12 18.4a4.6 4.6 0 0 0 4.6-4.6c0-2.4-1.4-3.6-2.2-5.4"/>
+        <path d="M12 22c-3.3 0-6-2.1-6-5"/>
+        <path d="M12 22c3.3 0 6-2.1 6-5"/>
+      </svg>
+    </div>
+    <div>
+      <div class="marca-nome">Quintal Gourmet</div>
+      <div class="marca-sub">Defumados &amp; Artesanais</div>
+    </div>
+  </div>
+
+  <header class="abertura">
+    <h1>Quanta brasa<br>o seu domingo<br><em>realmente</em> pede?</h1>
+    <p>
+      Diga quem senta à mesa e a gente devolve a lista fechada — peça por peça, com preço
+      do balcão. Sem sobrar meia geladeira nem faltar linguiça no melhor da tarde.
+    </p>
+  </header>
+
+  <main class="mesa">
+
+    <div class="controles">
+
+      <fieldset>
+        <legend>Quem senta à mesa</legend>
+        <div class="contadores">
+          <div class="contador">
+            <div class="contador-nome"><strong>Adultos</strong><span>a partir de 12 anos</span></div>
+            <div class="passo" data-passo="adultos">
+              <button type="button" data-delta="-1" aria-label="Menos um adulto">−</button>
+              <output id="saida-adultos">8</output>
+              <button type="button" data-delta="1" aria-label="Mais um adulto">+</button>
+            </div>
+          </div>
+          <div class="contador">
+            <div class="contador-nome"><strong>Crianças</strong><span>até 11 anos</span></div>
+            <div class="passo" data-passo="criancas">
+              <button type="button" data-delta="-1" aria-label="Menos uma criança">−</button>
+              <output id="saida-criancas">2</output>
+              <button type="button" data-delta="1" aria-label="Mais uma criança">+</button>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>O tamanho da fome</legend>
+        <div class="fichas" id="fichas-fome" role="group" aria-label="Nível de fome"></div>
+        <p class="ajuda" id="ajuda-fome"></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Tempo de brasa</legend>
+        <div class="fichas" id="fichas-tempo" role="group" aria-label="Duração do churrasco"></div>
+        <p class="ajuda" id="ajuda-tempo"></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>O estilo da casa</legend>
+        <div class="estilos" id="estilos" role="group" aria-label="Estilo do churrasco"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Para completar</legend>
+        <div class="chaves">
+          <label class="chave">
+            <input type="checkbox" id="op-acomp" checked>
+            <span class="trilho"></span>
+            <span class="chave-texto">
+              <strong>Farofa e torresmo</strong>
+              <span>uma porção a cada seis pessoas</span>
+            </span>
+          </label>
+          <label class="chave">
+            <input type="checkbox" id="op-feijoada">
+            <span class="trilho"></span>
+            <span class="chave-texto">
+              <strong>Feijoada da casa</strong>
+              <span>para o dia seguinte — ou para quem chega cedo</span>
+            </span>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Faltou alguma coisa</legend>
+        <div class="acrescentar">
+          <select id="escolha-extra" aria-label="Escolher um item do balcão"></select>
+          <button type="button" class="botao discreto" id="btn-acrescentar">Pôr na lista</button>
+        </div>
+      </fieldset>
+
+    </div>
+
+    <aside class="coluna-cupom">
+
+      <div class="medidor">
+        <div class="medidor-topo">
+          <span class="medidor-rotulo">Na sacola</span>
+          <b id="medidor-valor">—</b>
+        </div>
+        <div class="barra" id="barra"><i id="barra-preenche" style="width:0%"></i></div>
+        <p class="veredito" id="veredito"></p>
+      </div>
+
+      <div class="cupom" id="cupom">
+        <div class="cupom-marca">QUINTAL GOURMET</div>
+        <div class="cupom-sub">Lista de churrasco</div>
+        <div class="cupom-cabeca">
+          <span id="cupom-data">—</span>
+          <span id="cupom-gente">—</span>
+        </div>
+        <hr class="risco">
+        <div class="linhas" id="linhas"></div>
+        <hr class="risco">
+        <div class="cupom-total"><span>TOTAL</span><span id="total">R$ 0,00</span></div>
+        <div class="cupom-resumo" id="resumo"></div>
+        <hr class="risco">
+        <div class="cupom-rodape">Orçamento sem valor fiscal · preços do balcão</div>
+      </div>
+
+      <div class="acoes">
+        <button type="button" class="botao" id="btn-copiar">Copiar o pedido</button>
+        <button type="button" class="botao discreto" id="btn-limpar">Refazer a conta</button>
+      </div>
+      <p class="aviso" id="aviso"></p>
+      <textarea class="caixa-copia" id="caixa-copia" readonly aria-label="Texto do pedido"></textarea>
+
+    </aside>
+
+  </main>
+
+  <div class="notas">
+    <div>
+      <h2>Como a conta é feita</h2>
+      <p>
+        400 g de carne por adulto e 200 g por criança, corrigidos pela fome e pelo tempo de
+        brasa. Cada peça do balcão é contada como 1 kg.
+      </p>
+    </div>
+    <div>
+      <h2>Sobre os preços</h2>
+      <p>
+        Vêm da tabela do PDV do Quintal Gourmet. Podem mudar no balcão — confirme na hora
+        de fechar o pedido.
+      </p>
+    </div>
+    <div>
+      <h2>Peças marcadas</h2>
+      <p>
+        Quando a quantidade passa do que costuma ficar na câmara, a peça sai marcada como
+        encomenda. Vale avisar com um dia de antecedência.
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const CATALOGO = [
+    { cod: 'LINT',    nome: 'Linguiça toscana',                          cat: 'Linguiças',       preco: 24.99, est: 13 },
+    { cod: 'LINTQ',   nome: 'Linguiça toscana com queijo',               cat: 'Linguiças',       preco: 24.99, est: 4 },
+    { cod: 'LINTPQ',  nome: 'Linguiça toscana picante com queijo',       cat: 'Linguiças',       preco: 24.99, est: 4 },
+    { cod: 'LINCU',   nome: 'Linguiça cuiabana',                         cat: 'Linguiças',       preco: 24.99, est: 5 },
+    { cod: 'LINFMQ',  nome: 'Linguiça de frango com manjericão e queijo', cat: 'Linguiças',      preco: 24.99, est: 4 },
+    { cod: 'LINFB',   nome: 'Linguiça de frango com bacon',              cat: 'Linguiças',       preco: 24.99, est: 4 },
+    { cod: 'LINCSQ',  nome: 'Linguiça carne de sol com queijo',          cat: 'Linguiças',       preco: 26.99, est: 8 },
+    { cod: 'LINCA',   nome: 'Linguiça de carneiro',                      cat: 'Linguiças',       preco: 29.99, est: 8 },
+    { cod: 'LINCAQ',  nome: 'Linguiça de carneiro com queijo',           cat: 'Linguiças',       preco: 31.99, est: 8 },
+    { cod: 'LINCAQP', nome: 'Linguiça de carneiro com queijo picante',   cat: 'Linguiças',       preco: 31.99, est: 4 },
+    { cod: 'KAFB',    nome: 'Kafta bovina',                              cat: 'Kaftas',          preco: 27.99, est: 9 },
+    { cod: 'KAFS',    nome: 'Kafta suína',                               cat: 'Kaftas',          preco: 24.99, est: 10 },
+    { cod: 'KAFF',    nome: 'Kafta de frango',                           cat: 'Kaftas',          preco: 24.99, est: 11 },
+    { cod: 'HMB',     nome: 'Hambúrguer artesanal',                      cat: 'Hambúrgueres',    preco: 29.99, est: 12 },
+    { cod: 'TULC',    nome: 'Tulipa com cheddar',                        cat: 'Tulipas',         preco: 24.99, est: 4 },
+    { cod: 'TULR',    nome: 'Tulipa com requeijão',                      cat: 'Tulipas',         preco: 24.99, est: 9 },
+    { cod: 'DESCS',   nome: 'Carne de sol desfiada',                     cat: 'Desfiados',       preco: 49.99, est: 3 },
+    { cod: 'DESFR',   nome: 'Frango desfiado',                           cat: 'Desfiados',       preco: 29.99, est: 6 },
+    { cod: 'FAR',     nome: 'Farofa da casa',                            cat: 'Acompanhamentos', preco: 18.99, est: 4 },
+    { cod: 'TOR',     nome: 'Torresmo',                                  cat: 'Acompanhamentos', preco: 14.99, est: 2 },
+    { cod: 'FEI',     nome: 'Feijoada',                                  cat: 'Pratos prontos',  preco: 68.00, est: 2 },
+  ];
+
+  const PECA = {};
+  CATALOGO.forEach((p) => { PECA[p.cod] = p; });
+
+  // Itens que contam como carne de brasa no cálculo de quilos.
+  const CARNES = new Set(CATALOGO.filter((p) => !['FAR', 'TOR', 'FEI'].includes(p.cod)).map((p) => p.cod));
+
+  const FOMES = [
+    { id: 'leve',   rotulo: 'Come pouco',    fator: 0.80, ajuda: 'Mesa de conversa: muita salada, pouco prato repetido.' },
+    { id: 'normal', rotulo: 'Fome honesta',  fator: 1.00, ajuda: 'A média de uma família brasileira em fim de semana.' },
+    { id: 'brava',  rotulo: 'Fome de time',  fator: 1.35, ajuda: 'Aquele grupo que volta na grelha três vezes. Sem medo.' },
+  ];
+
+  const TEMPOS = [
+    { id: 'curto', rotulo: 'Até 3 horas',  fator: 0.85, ajuda: 'Almoço direto: acende, come, tira a mesa.' },
+    { id: 'medio', rotulo: '3 a 5 horas',  fator: 1.00, ajuda: 'O clássico: começa meio-dia e termina no fim da tarde.' },
+    { id: 'longo', rotulo: 'O dia inteiro', fator: 1.25, ajuda: 'Brasa acesa desde cedo — sempre tem alguém beliscando.' },
+  ];
+
+  const ESTILOS = [
+    {
+      id: 'classico',
+      nome: 'Clássico de quintal',
+      resumo: 'Toscana, kafta e hambúrguer — o que todo mundo reconhece.',
+      mix: { LINT: .18, LINCU: .10, LINTQ: .08, HMB: .20, KAFB: .12, KAFS: .08, TULR: .09, DESFR: .08, LINCSQ: .07 },
+    },
+    {
+      id: 'gourmet',
+      nome: 'Mesa de respeito',
+      resumo: 'Carneiro e carne de sol na grelha, para impressionar visita.',
+      mix: { LINCA: .16, LINCAQ: .16, LINCAQP: .10, LINCSQ: .16, DESCS: .18, KAFB: .14, LINFMQ: .10 },
+    },
+    {
+      id: 'aves',
+      nome: 'Só aves',
+      resumo: 'Frango do começo ao fim: linguiça, kafta e tulipa.',
+      mix: { LINFMQ: .20, LINFB: .18, KAFF: .20, TULC: .16, TULR: .14, DESFR: .12 },
+    },
+    {
+      id: 'economico',
+      nome: 'Conta em pé',
+      resumo: 'O melhor rendimento por real, sem abrir mão do artesanal.',
+      mix: { LINT: .34, KAFS: .22, HMB: .26, LINCU: .18 },
+    },
+  ];
+
+  const estado = {
+    adultos: 8,
+    criancas: 2,
+    fome: 'normal',
+    tempo: 'medio',
+    estilo: 'classico',
+    acomp: true,
+    feijoada: false,
+    ajustes: {},   // codigo -> delta manual de peças
+  };
+
+  const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+  const kg = (n) => `${n.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg`;
+  const $ = (id) => document.getElementById(id);
+
+  /* --------------------------- montagem da tela --------------------------- */
+
+  function montarFichas(alvo, opcoes, chave, ajuda) {
+    alvo.innerHTML = opcoes.map((o) => `
+      <button type="button" class="ficha" data-valor="${o.id}" aria-pressed="${estado[chave] === o.id}">${o.rotulo}</button>
+    `).join('');
+    alvo.addEventListener('click', (ev) => {
+      const botao = ev.target.closest('.ficha');
+      if (!botao) return;
+      estado[chave] = botao.dataset.valor;
+      [...alvo.children].forEach((b) => b.setAttribute('aria-pressed', String(b === botao)));
+      ajuda.textContent = opcoes.find((o) => o.id === estado[chave]).ajuda;
+      desenhar();
+    });
+    ajuda.textContent = opcoes.find((o) => o.id === estado[chave]).ajuda;
+  }
+
+  function montarEstilos() {
+    const alvo = $('estilos');
+    alvo.innerHTML = ESTILOS.map((e) => `
+      <button type="button" class="estilo" data-valor="${e.id}" aria-pressed="${estado.estilo === e.id}">
+        <strong>${e.nome}</strong>
+        <span>${e.resumo}</span>
+      </button>
+    `).join('');
+    alvo.addEventListener('click', (ev) => {
+      const botao = ev.target.closest('.estilo');
+      if (!botao) return;
+      estado.estilo = botao.dataset.valor;
+      estado.ajustes = {};
+      [...alvo.children].forEach((b) => b.setAttribute('aria-pressed', String(b === botao)));
+      desenhar();
+    });
+  }
+
+  function montarContadores() {
+    document.querySelectorAll('.passo').forEach((grupo) => {
+      const chave = grupo.dataset.passo;
+      grupo.addEventListener('click', (ev) => {
+        const botao = ev.target.closest('button');
+        if (!botao) return;
+        const proximo = estado[chave] + Number(botao.dataset.delta);
+        estado[chave] = Math.max(chave === 'adultos' ? 1 : 0, Math.min(60, proximo));
+        desenhar();
+      });
+    });
+  }
+
+  function montarExtras() {
+    const sel = $('escolha-extra');
+    const cats = [...new Set(CATALOGO.map((p) => p.cat))];
+    sel.innerHTML = cats.map((c) => `
+      <optgroup label="${c}">
+        ${CATALOGO.filter((p) => p.cat === c).map((p) => `<option value="${p.cod}">${p.nome} — ${brl.format(p.preco)}</option>`).join('')}
+      </optgroup>
+    `).join('');
+
+    $('btn-acrescentar').addEventListener('click', () => {
+      const cod = sel.value;
+      estado.ajustes[cod] = (estado.ajustes[cod] || 0) + 1;
+      desenhar();
+      avisar(`${PECA[cod].nome} entrou na lista.`);
+    });
+
+    $('op-acomp').addEventListener('change', (ev) => { estado.acomp = ev.target.checked; desenhar(); });
+    $('op-feijoada').addEventListener('change', (ev) => { estado.feijoada = ev.target.checked; desenhar(); });
+  }
+
+  /* ------------------------------- a conta ------------------------------- */
+
+  function calcular() {
+    const fome = FOMES.find((f) => f.id === estado.fome).fator;
+    const tempo = TEMPOS.find((t) => t.id === estado.tempo).fator;
+    const estilo = ESTILOS.find((e) => e.id === estado.estilo);
+
+    const gramas = (estado.adultos * 400 + estado.criancas * 200) * fome * tempo;
+    const quilosAlvo = gramas / 1000;
+    const pecas = Math.max(1, Math.ceil(quilosAlvo));
+    const pessoas = estado.adultos + estado.criancas;
+
+    // Reparte as peças pelo mix do estilo — sobras vão para quem ficou mais perto
+    // do próximo inteiro, então o total bate exatamente com o arredondamento.
+    const fatias = Object.entries(estilo.mix).map(([cod, peso]) => {
+      const exato = pecas * peso;
+      return { cod, exato, qtd: Math.floor(exato) };
+    });
+    let resto = pecas - fatias.reduce((s, f) => s + f.qtd, 0);
+    fatias.sort((a, b) => (b.exato - b.qtd) - (a.exato - a.qtd));
+    for (let i = 0; resto > 0; i++, resto--) fatias[i % fatias.length].qtd += 1;
+
+    const lista = new Map();
+    fatias.forEach((f) => { if (f.qtd > 0) lista.set(f.cod, { qtd: f.qtd, sugerido: f.qtd }); });
+
+    if (estado.acomp && pessoas > 0) {
+      const porcoes = Math.max(1, Math.ceil(pessoas / 6));
+      lista.set('FAR', { qtd: porcoes, sugerido: porcoes });
+      lista.set('TOR', { qtd: Math.max(1, Math.ceil(pessoas / 8)), sugerido: Math.max(1, Math.ceil(pessoas / 8)) });
+    }
+    if (estado.feijoada && pessoas > 0) {
+      const panelas = Math.max(1, Math.ceil(pessoas / 6));
+      lista.set('FEI', { qtd: panelas, sugerido: panelas });
+    }
+
+    Object.entries(estado.ajustes).forEach(([cod, delta]) => {
+      const atual = lista.get(cod) || { qtd: 0, sugerido: 0 };
+      const qtd = Math.max(0, atual.qtd + delta);
+      if (qtd === 0) lista.delete(cod);
+      else lista.set(cod, { qtd, sugerido: atual.sugerido });
+    });
+
+    // Na nota, a grelha vem primeiro; acompanhamento e panela fecham a lista.
+    const ORDEM = ['Linguiças', 'Kaftas', 'Hambúrgueres', 'Tulipas', 'Desfiados', 'Acompanhamentos', 'Pratos prontos'];
+    const itens = [...lista.entries()]
+      .map(([cod, v]) => ({ ...PECA[cod], ...v, total: v.qtd * PECA[cod].preco }))
+      .sort((a, b) => (a.cat === b.cat ? b.total - a.total : ORDEM.indexOf(a.cat) - ORDEM.indexOf(b.cat)));
+
+    const total = itens.reduce((s, i) => s + i.total, 0);
+    const quilosCarne = itens.filter((i) => CARNES.has(i.cod)).reduce((s, i) => s + i.qtd, 0);
+
+    return { itens, total, quilosAlvo, quilosCarne, pessoas, pecas };
+  }
+
+  /* ------------------------------ a desenhar ------------------------------ */
+
+  function desenhar() {
+    $('saida-adultos').textContent = estado.adultos;
+    $('saida-criancas').textContent = estado.criancas;
+
+    const r = calcular();
+
+    const gentes = `${r.pessoas} ${r.pessoas === 1 ? 'pessoa' : 'pessoas'}`;
+    $('cupom-gente').textContent = gentes;
+    $('cupom-data').textContent = new Date().toLocaleDateString('pt-BR');
+
+    $('linhas').innerHTML = r.itens.length ? r.itens.map((i) => {
+      const encomenda = i.qtd > i.est;
+      const mexido = i.qtd !== i.sugerido;
+      return `
+        <div class="linha">
+          <div class="linha-nome">
+            <span>${i.nome}${encomenda ? '<span class="selo-encomenda">encomenda</span>' : ''}</span>
+            <span>${brl.format(i.total)}</span>
+          </div>
+          <div class="linha-detalhe">
+            <span>${i.qtd} × ${brl.format(i.preco)}${mexido ? ' · ajustado' : ''}</span>
+            <span class="mexer">
+              <button type="button" data-cod="${i.cod}" data-delta="-1" aria-label="Menos uma peça de ${i.nome}">−</button>
+              <button type="button" data-cod="${i.cod}" data-delta="1" aria-label="Mais uma peça de ${i.nome}">+</button>
+            </span>
+          </div>
+        </div>`;
+    }).join('') : '<div class="cupom-vazio">A lista está vazia. Acrescente alguém à mesa.</div>';
+
+    $('total').textContent = brl.format(r.total);
+
+    const porPessoa = r.pessoas ? r.total / r.pessoas : 0;
+    $('resumo').innerHTML = `
+      <div><span>Peças no total</span><span>${r.itens.reduce((s, i) => s + i.qtd, 0)}</span></div>
+      <div><span>Carne na grelha</span><span>${kg(r.quilosCarne)}</span></div>
+      <div><span>Por pessoa</span><span>${brl.format(porPessoa)}</span></div>
+    `;
+
+    // medidor: quanto da carne recomendada já está na sacola
+    const razao = r.quilosAlvo ? r.quilosCarne / r.quilosAlvo : 0;
+    const barra = $('barra');
+    barra.classList.remove('farto', 'curto');
+    let veredito;
+    if (razao < 0.9) {
+      barra.classList.add('curto');
+      veredito = `Faltam <b>${kg(Math.max(0, r.quilosAlvo - r.quilosCarne))}</b> para o que essa mesa costuma comer.`;
+    } else if (razao <= 1.25) {
+      veredito = `Está <b>no ponto</b>: cerca de ${Math.round((r.quilosCarne * 1000) / Math.max(1, r.pessoas))} g de carne por pessoa.`;
+    } else {
+      barra.classList.add('farto');
+      veredito = `Vai sobrar — <b>${kg(r.quilosCarne - r.quilosAlvo)}</b> acima da conta. Bom para a segunda-feira.`;
+    }
+    $('barra-preenche').style.width = `${Math.min(100, razao * 100 / 1.25)}%`;
+    $('medidor-valor').textContent = `${kg(r.quilosCarne)} de carne`;
+    $('veredito').innerHTML = veredito;
+  }
+
+  $('linhas').addEventListener('click', (ev) => {
+    const botao = ev.target.closest('button[data-cod]');
+    if (!botao) return;
+    const { cod, delta } = botao.dataset;
+    estado.ajustes[cod] = (estado.ajustes[cod] || 0) + Number(delta);
+    desenhar();
+  });
+
+  /* ------------------------------ o pedido ------------------------------ */
+
+  let relogioAviso;
+  function avisar(texto) {
+    $('aviso').textContent = texto;
+    clearTimeout(relogioAviso);
+    relogioAviso = setTimeout(() => { $('aviso').textContent = ''; }, 4000);
+  }
+
+  function textoDoPedido() {
+    const r = calcular();
+    const estilo = ESTILOS.find((e) => e.id === estado.estilo).nome;
+    const linhas = r.itens.map((i) => `• ${i.qtd}x ${i.nome} — ${brl.format(i.total)}`);
+    return [
+      'Olá, Quintal Gourmet! Queria fechar este churrasco:',
+      '',
+      `Mesa: ${r.pessoas} pessoas (${estado.adultos} adultos, ${estado.criancas} crianças)`,
+      `Estilo: ${estilo}`,
+      '',
+      ...linhas,
+      '',
+      `TOTAL: ${brl.format(r.total)}`,
+      `(${kg(r.quilosCarne)} de carne, ${brl.format(r.pessoas ? r.total / r.pessoas : 0)} por pessoa)`,
+    ].join('\n');
+  }
+
+  $('btn-copiar').addEventListener('click', async () => {
+    const texto = textoDoPedido();
+    const caixa = $('caixa-copia');
+    try {
+      await navigator.clipboard.writeText(texto);
+      avisar('Pedido copiado — é só colar no WhatsApp da loja.');
+      caixa.classList.remove('aberta');
+    } catch {
+      caixa.value = texto;
+      caixa.classList.add('aberta');
+      caixa.select();
+      avisar('Selecione o texto abaixo e copie com Ctrl+C.');
+    }
+  });
+
+  $('btn-limpar').addEventListener('click', () => {
+    estado.ajustes = {};
+    $('caixa-copia').classList.remove('aberta');
+    desenhar();
+    avisar('Conta refeita a partir da recomendação da casa.');
+  });
+
+  montarFichas($('fichas-fome'), FOMES, 'fome', $('ajuda-fome'));
+  montarFichas($('fichas-tempo'), TEMPOS, 'tempo', $('ajuda-tempo'));
+  montarEstilos();
+  montarContadores();
+  montarExtras();
+  desenhar();
+</script>
+
+</body>
+</html>

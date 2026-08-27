@@ -58,6 +58,12 @@ function gerarEan13(sequencia) {
   return base12 + digitoEan13(base12);
 }
 
+/** Caminho público da foto do produto, quando ela já foi preparada. */
+function fotoDoProduto(codigo) {
+  const arquivo = path.join(__dirname, '..', 'public', 'fotos', `${codigo}.jpg`);
+  return fs.existsSync(arquivo) ? `/fotos/${codigo}.jpg` : '';
+}
+
 function categoriaDe(descricao) {
   const d = descricao.toUpperCase();
   if (d.includes('LINGUI')) return 'LINGUIÇAS';
@@ -206,6 +212,7 @@ async function semear({ forcar = false, gravar = true, silencioso = false } = {}
       estoque,
       estoque_minimo: minimo,
       ativo: true,
+      foto: fotoDoProduto(codigo),
       ultima_entrada: dataDe(p.ultima_entrada) ? dataDe(p.ultima_entrada).toISOString() : '',
       ultima_saida: dataDe(p.ultima_saida) ? dataDe(p.ultima_saida).toISOString() : '',
       criado_em: agora,
@@ -232,6 +239,7 @@ async function semear({ forcar = false, gravar = true, silencioso = false } = {}
       estoque: 0,
       estoque_minimo: 3,
       ativo: true,
+      foto: fotoDoProduto(codigo),
       criado_em: agora,
       atualizado_em: agora,
     });

@@ -231,3 +231,39 @@ export function etiquetaSituacao(situacao) {
   const mapa = { OK: 'ok', 'ATENÇÃO': 'atencao', 'CRÍTICO': 'critico', ZERADO: 'zerado' };
   return `<span class="etiqueta ${mapa[situacao] || 'neutra'}">${situacao}</span>`;
 }
+
+/* ------------------------------ Fotos ------------------------------ */
+
+/** Iniciais do produto, usadas quando não há foto cadastrada. */
+export function iniciaisProduto(descricao) {
+  return String(descricao || '?')
+    .replace(/[^A-Za-zÀ-ÿ ]/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((parte) => parte[0])
+    .join('')
+    .toUpperCase() || '?';
+}
+
+/** Versão leve (320px) da foto, para grades e listas. */
+export function fotoMini(produto) {
+  if (!produto || !produto.foto) return '';
+  return produto.foto.replace(/\.jpg$/i, '-mini.jpg');
+}
+
+/** Miniatura quadrada do produto — cai para o monograma quando não há foto. */
+export function miniatura(produto, classe = '') {
+  const mini = fotoMini(produto);
+  if (mini) {
+    // Se a versão leve não existir (foto avulsa cadastrada à mão), usa a original;
+    // falhando as duas, mostra o monograma no lugar da imagem quebrada.
+    const reserva = 'this.dataset.tentou ? (this.outerHTML = this.dataset.vazio) '
+      + ': (this.dataset.tentou = 1, this.src = this.dataset.cheia)';
+    return `<img class="miniatura ${classe}" src="${escapar(mini)}"
+      data-cheia="${escapar(produto.foto)}"
+      data-vazio="${escapar(`<div class="miniatura miniatura-vazia ${classe}">${iniciaisProduto(produto.descricao)}</div>`)}"
+      alt="${escapar(produto.descricao || '')}" loading="lazy" onerror="${reserva}">`;
+  }
+  return `<div class="miniatura miniatura-vazia ${classe}" aria-hidden="true">${escapar(iniciaisProduto(produto.descricao))}</div>`;
+}

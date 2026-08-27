@@ -3,6 +3,7 @@
 import { api } from '../api.js';
 import {
   html, limpar, avisar, dinheiro, numero, escapar, abrirModal, confirmar,
+  fotoMini, iniciaisProduto, miniatura,
 } from '../util.js';
 import { mostrarCupom } from '../cupom.js';
 
@@ -118,13 +119,24 @@ export async function montar(raiz, contexto) {
     }
     lista.slice(0, 60).forEach((produto, i) => {
       const semEstoque = produto.estoque <= 0;
+      const mini = fotoMini(produto);
+      const critico = !semEstoque && produto.estoque <= produto.estoque_minimo;
       const botao = html(`
         <button class="produto-tile ${semEstoque ? 'sem-estoque' : ''}" style="--i:${i}" ${semEstoque ? 'disabled' : ''}>
-          <span class="cod">${escapar(produto.codigo)}</span>
-          <span class="nome">${escapar(produto.descricao)}</span>
-          <span class="rodape-tile">
-            <span class="preco">${dinheiro(produto.preco_venda)}</span>
-            <span class="estoque-mini">${semEstoque ? 'sem estoque' : `${numero(produto.estoque)} ${produto.unidade.toLowerCase()}`}</span>
+          <span class="tile-vitrine">
+            ${mini
+              ? `<img src="${escapar(mini)}" alt="${escapar(produto.descricao)}" loading="lazy"
+                     data-cheia="${escapar(produto.foto)}"
+                     onerror="if (!this.dataset.tentou) { this.dataset.tentou = 1; this.src = this.dataset.cheia; } else { this.remove(); }">`
+              : `<span class="sem-foto">${escapar(iniciaisProduto(produto.descricao))}</span>`}
+            <span class="tile-selo-estoque ${semEstoque ? 'zerado' : critico ? 'baixo' : ''}">
+              ${semEstoque ? 'sem estoque' : `${numero(produto.estoque)} ${escapar(produto.unidade.toLowerCase())}`}
+            </span>
+            <span class="tile-preco-flutuante">${dinheiro(produto.preco_venda)}</span>
+          </span>
+          <span class="tile-corpo">
+            <span class="cod">${escapar(produto.codigo)}</span>
+            <span class="nome">${escapar(produto.descricao)}</span>
           </span>
         </button>
       `);
@@ -148,6 +160,7 @@ export async function montar(raiz, contexto) {
         codigo: produto.codigo,
         descricao: produto.descricao,
         unidade: produto.unidade,
+        foto: produto.foto,
         preco_unitario: produto.preco_venda,
         estoque: produto.estoque,
         quantidade,
@@ -179,9 +192,12 @@ export async function montar(raiz, contexto) {
     [...carrinho].reverse().forEach((item) => {
       const linha = html(`
         <div class="item-comanda ${destaque === item.codigo ? 'destaque' : ''}">
-          <div>
-            <div class="titulo">${escapar(item.descricao)}</div>
-            <div class="info">${escapar(item.codigo)} · ${dinheiro(item.preco_unitario)} / ${escapar(item.unidade.toLowerCase())}</div>
+          <div class="celula-produto">
+            ${miniatura(item, 'pequena')}
+            <div style="min-width:0">
+              <div class="titulo">${escapar(item.descricao)}</div>
+              <div class="info">${escapar(item.codigo)} · ${dinheiro(item.preco_unitario)} / ${escapar(item.unidade.toLowerCase())}</div>
+            </div>
           </div>
           <div class="total-item">${dinheiro(item.preco_unitario * item.quantidade)}</div>
           <div class="acoes">

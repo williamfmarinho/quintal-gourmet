@@ -3,7 +3,7 @@
 import { api } from '../api.js';
 import {
   html, limpar, avisar, dinheiro, numero, percentual, escapar, dataHora,
-  abrirModal, etiquetaSituacao,
+  abrirModal, etiquetaSituacao, miniatura, fotoMini, iniciaisProduto,
 } from '../util.js';
 
 const SITUACOES = ['OK', 'ATENÇÃO', 'CRÍTICO', 'ZERADO'];
@@ -114,8 +114,13 @@ export async function montar(raiz, contexto) {
             <tr class="clicavel" data-codigo="${escapar(p.codigo)}">
               <td class="mono dourado">${escapar(p.codigo)}</td>
               <td>
-                <div style="font-weight:600">${escapar(p.descricao)}${p.ativo ? '' : ' <span class="etiqueta neutra">inativo</span>'}</div>
-                <div class="fraco mono" style="font-size:11px">${escapar(p.codigo_barras || '—')}</div>
+                <div class="celula-produto">
+                  ${miniatura(p)}
+                  <div style="min-width:0">
+                    <div style="font-weight:600">${escapar(p.descricao)}${p.ativo ? '' : ' <span class="etiqueta neutra">inativo</span>'}</div>
+                    <div class="fraco mono" style="font-size:11px">${escapar(p.codigo_barras || '—')}</div>
+                  </div>
+                </div>
               </td>
               <td class="fraco">${escapar(p.categoria)}</td>
               <td class="direita num">${dinheiro(p.preco_venda)}</td>
@@ -155,7 +160,13 @@ export async function montar(raiz, contexto) {
       subtitulo: `${p.codigo} · ${p.categoria} · código de barras ${p.codigo_barras || '—'}`,
       largura: 'largo',
       corpo: `
-        <div class="grade grade-4" style="margin-bottom:20px">
+        <div class="ficha-topo">
+          <div class="ficha-foto">
+            ${p.foto
+              ? `<img src="${escapar(p.foto)}" alt="${escapar(p.descricao)}">`
+              : `<div class="sem-foto">${escapar(iniciaisProduto(p.descricao))}</div>`}
+          </div>
+          <div class="ficha-indicadores">
           <div class="indicador"><div class="rotulo">Preço de venda</div><div class="valor">${dinheiro(p.preco_venda)}</div></div>
           <div class="indicador"><div class="rotulo">Estoque atual</div><div class="valor">${numero(p.estoque)}</div><div class="nota">mínimo ${numero(p.estoque_minimo)}</div></div>
           ${admin ? `
@@ -165,6 +176,7 @@ export async function montar(raiz, contexto) {
             <div class="indicador"><div class="rotulo">Situação</div><div class="valor">${p.situacao}</div></div>
             <div class="indicador"><div class="rotulo">Última saída</div><div class="valor" style="font-size:19px">${dataHora(p.ultima_saida)}</div></div>
           `}
+          </div>
         </div>
 
         ${admin ? `
@@ -260,6 +272,18 @@ export async function montar(raiz, contexto) {
               <option value="0" ${p.ativo ? '' : 'selected'}>Inativo</option>
             </select>
           </div>
+          <div class="campo inteiro">
+            <label>Foto do produto</label>
+            <div class="previa-foto">
+              <div id="f-previa">${miniatura(p)}</div>
+              <div style="flex:1">
+                <input id="f-foto" value="${escapar(p.foto || '')}" placeholder="/fotos/CODIGO.jpg">
+                <div class="fraco" style="font-size:11.5px;margin-top:6px">
+                  Caminho da imagem já preparada. Deixe em branco para usar o monograma do produto.
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         ${novo ? '<p class="fraco" style="font-size:12.5px;margin:14px 0 0">O estoque inicial deve ser lançado pela tela de <b>Estoque → Entradas</b>, para que o custo médio seja calculado corretamente.</p>' : ''}
       `,
@@ -271,6 +295,14 @@ export async function montar(raiz, contexto) {
 
     const pegar = (id) => modal.elemento.querySelector(id).value.trim();
     const decimal = (id) => Number(pegar(id).replace(/\./g, '').replace(',', '.')) || 0;
+
+    const campoFoto = modal.elemento.querySelector('#f-foto');
+    campoFoto.addEventListener('input', () => {
+      modal.elemento.querySelector('#f-previa').innerHTML = miniatura({
+        descricao: modal.elemento.querySelector('#f-descricao').value,
+        foto: campoFoto.value.trim(),
+      });
+    });
 
     modal.elemento.querySelector('[data-acao="cancelar"]').addEventListener('click', modal.fechar);
     modal.elemento.querySelector('[data-acao="salvar"]').addEventListener('click', async () => {
@@ -286,6 +318,7 @@ export async function montar(raiz, contexto) {
             preco_venda: decimal('#f-preco'),
             custo_medio: decimal('#f-custo'),
             estoque_minimo: decimal('#f-minimo'),
+            foto: pegar('#f-foto'),
             ativo: modal.elemento.querySelector('#f-ativo').value === '1',
           },
         });

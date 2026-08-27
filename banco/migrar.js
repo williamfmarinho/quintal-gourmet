@@ -48,6 +48,32 @@ async function criarEsquema(pool) {
   console.log('  esquema ............ ok');
 }
 
+/**
+ * Aponta cada produto para a foto correspondente em `public/fotos`.
+ * Roda sempre e não apaga nada: serve tanto para uma base nova quanto para
+ * uma base que já está em uso e acabou de ganhar as fotos.
+ */
+async function sincronizarFotos(pool) {
+  const pasta = path.join(__dirname, '..', 'public', 'fotos');
+  if (!fs.existsSync(pasta)) return;
+
+  const codigos = fs.readdirSync(pasta)
+    .filter((nome) => nome.toLowerCase().endsWith('.jpg') && !nome.toLowerCase().endsWith('-mini.jpg'))
+    .map((nome) => nome.replace(/\.jpg$/i, '').toUpperCase());
+
+  if (!codigos.length) return;
+
+  const { rowCount } = await pool.query(
+    `update produtos
+        set foto = '/fotos/' || codigo || '.jpg'
+      where upper(codigo) = any($1)
+        and foto is distinct from '/fotos/' || codigo || '.jpg'`,
+    [codigos]
+  );
+
+  console.log(`  fotos .............. ${codigos.length} disponíveis, ${rowCount} produto(s) atualizados`);
+}
+
 async function estaVazio(pool) {
   const { rows } = await pool.query('select count(*)::int as total from produtos');
   return rows[0].total === 0;
@@ -99,6 +125,7 @@ async function principal() {
 
   console.log('\nMigrando o banco do Quintal Gourmet...\n');
   await criarEsquema(pool);
+  await sincronizarFotos(pool);
 
   if (soEsquema) {
     console.log('\nSomente o esquema foi aplicado.\n');
@@ -112,6 +139,7 @@ async function principal() {
   }
 
   await carregarDados(adaptador);
+  await sincronizarFotos(pool);
 
   const { rows } = await pool.query(`
     select

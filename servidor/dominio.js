@@ -114,6 +114,7 @@ async function salvarProduto(repo, dados, sessao) {
         estoque: Number(dados.estoque) || 0,
         estoque_minimo: Number(dados.estoque_minimo) || 0,
         ativo: dados.ativo === undefined ? true : Boolean(dados.ativo),
+        foto: String(dados.foto || '').trim(),
         criado_em: momento,
         atualizado_em: momento,
       });
@@ -129,6 +130,7 @@ async function salvarProduto(repo, dados, sessao) {
       custo_medio: dados.custo_medio === undefined ? existente.custo_medio : c(dados.custo_medio),
       estoque_minimo: dados.estoque_minimo === undefined ? existente.estoque_minimo : Number(dados.estoque_minimo) || 0,
       ativo: dados.ativo === undefined ? existente.ativo : Boolean(dados.ativo),
+      foto: dados.foto === undefined ? existente.foto : String(dados.foto).trim(),
       atualizado_em: momento,
     });
     return calc.enriquecerProduto(atualizado);

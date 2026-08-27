@@ -44,6 +44,7 @@ const ESQUEMA = {
     { chave: 'ultima_saida', titulo: 'ÚLT. SAÍDA', tipo: T.data, largura: 14 },
     { chave: 'criado_em', titulo: 'CRIADO EM', tipo: T.datahora, largura: 18 },
     { chave: 'atualizado_em', titulo: 'ATUALIZADO EM', tipo: T.datahora, largura: 18 },
+    { chave: 'foto', titulo: 'FOTO', tipo: T.texto, largura: 26 },
   ],
 
   ENTRADAS: [

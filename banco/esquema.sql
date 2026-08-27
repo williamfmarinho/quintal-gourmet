@@ -27,6 +27,7 @@ create table if not exists produtos (
   estoque         numeric(12,3) not null default 0,
   estoque_minimo  numeric(12,3) not null default 0,
   ativo           boolean not null default true,
+  foto            text not null default '',
   ultima_entrada  timestamptz,
   ultima_saida    timestamptz,
   criado_em       timestamptz not null default now(),
@@ -191,6 +192,12 @@ create table if not exists config (
 
 -- Numeração dos cupons: sequência do banco, à prova de concorrência.
 create sequence if not exists cupom_seq start 1;
+
+-- =====================================================================
+-- Evolução do esquema: colunas acrescentadas depois da primeira versão.
+-- =====================================================================
+
+alter table produtos add column if not exists foto text not null default '';
 
 -- =====================================================================
 -- Segurança: nenhuma tabela é exposta pela API pública do Supabase.

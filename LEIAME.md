@@ -151,7 +151,34 @@ dados/                       base .xlsx do modo local (fora do Git)
 
 ---
 
-## 5. Escopo
+## 5. Fotos dos produtos
+
+As fotos ficam em `public/fotos`, servidas junto com a interface (CDN da Vercel no modo
+publicado, disco local no modo offline). Cada produto tem duas versões quadradas:
+
+| Arquivo | Tamanho | Onde aparece |
+|---|---|---|
+| `<CODIGO>.jpg` | 640x640 | ficha do produto |
+| `<CODIGO>-mini.jpg` | 320x320 | grade do PDV, tabelas e comanda |
+
+Para (re)gerar a partir das fotos originais:
+
+```bash
+node banco/preparar-fotos.js "caminho/da/pasta/de/fotos"
+```
+
+O script recorta no centro, otimiza e grava as duas versões — **as fotos originais não
+entram no repositório**, só as versões prontas. O casamento entre arquivo e produto está no
+mapa `MAPA` dentro do próprio script; para trocar a foto de um item, ajuste o nome ali e
+rode de novo.
+
+Depois de gerar, `npm run migrar` sincroniza a coluna `foto` de cada produto sem apagar
+dados. Produto sem foto aparece com o monograma das iniciais, e o cadastro permite apontar
+um caminho diferente à mão.
+
+---
+
+## 6. Escopo
 
 Sistema de **simulação**: o cupom é **não fiscal** e os dados são de demonstração. Para uso
 real seriam necessários emissão fiscal (NFC-e/SAT), backup automático e revisão dos acessos

@@ -13,7 +13,9 @@
     "resetar": "node servidor/semear.js --forcar",
     "migrar": "node banco/migrar.js",
     "migrar:recarregar": "node banco/migrar.js --recarregar",
-    "migrar:esquema": "node banco/migrar.js --so-esquema"
+    "migrar:esquema": "node banco/migrar.js --so-esquema",
+    "zerar-estoque": "node banco/zerar-movimentos.js",
+    "fotos": "node banco/preparar-fotos.js"
   },
   "license": "ISC",
   "dependencies": {

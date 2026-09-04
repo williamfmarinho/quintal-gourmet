@@ -69,6 +69,24 @@ Depois do deploy, confira `https://SEU-PROJETO.vercel.app/api/saude` — deve re
 > **Nada de segredo entra no Git.** `.env.local` está no `.gitignore`; as chaves ficam
 > apenas na sua máquina e nas variáveis de ambiente da Vercel.
 
+
+### Recomeçar o estoque do zero
+
+Para alimentar entradas e saídas manualmente, partindo de estoque zerado e sem histórico
+de movimentação de mercadoria — **sem perder o histórico de vendas**:
+
+```bash
+npm run zerar-estoque              # mostra o que seria feito
+npm run zerar-estoque -- --confirmar
+```
+
+Zera o estoque de todos os produtos, apaga as entradas e as saídas que não vieram de venda,
+e preserva cupons, itens e pagamentos. As saídas geradas por vendas ficam de pé, porque são
+parte do histórico de vendas; para apagá-las também, acrescente `--com-saidas-de-venda`
+(e `--com-ajustes` para limpar os ajustes de inventário).
+
+> Vale para a base publicada no Supabase. No modo planilha, use `npm run resetar`.
+
 ---
 
 ## 3. O que o sistema faz

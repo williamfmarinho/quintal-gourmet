@@ -64,6 +64,15 @@ function fotoDoProduto(codigo) {
   return fs.existsSync(arquivo) ? `/fotos/${codigo}.jpg` : '';
 }
 
+/**
+ * Preços corrigidos pelo dono, que substituem o último preço praticado na
+ * planilha original. Mantidos aqui para que qualquer recarga da base já nasça
+ * com o valor certo.
+ */
+const PRECOS_CORRIGIDOS = {
+  FEI: 39.99, // feijoada
+};
+
 function categoriaDe(descricao) {
   const d = descricao.toUpperCase();
   if (d.includes('LINGUI')) return 'LINGUIÇAS';
@@ -196,7 +205,9 @@ async function semear({ forcar = false, gravar = true, silencioso = false } = {}
     if (!codigo) return;
     const descricao = texto(p.descricao).replace(/\s+/g, ' ');
     const custo = centavos(numero(p.ctm_atual) || numero(p.ctm_inicial));
-    const preco = precoPraticado[codigo] || centavos(Math.round(custo * 1.45) - 0.01);
+    const preco = PRECOS_CORRIGIDOS[codigo]
+      || precoPraticado[codigo]
+      || centavos(Math.round(custo * 1.45) - 0.01);
     const estoque = numero(p.estoque_final);
     const vendidos = giro[codigo] || 0;
     const minimo = Math.max(3, Math.round((vendidos / 4) * 2)); // ~2 dias de giro
@@ -442,6 +453,8 @@ async function semear({ forcar = false, gravar = true, silencioso = false } = {}
     cupom_rodape: 'Obrigado pela preferência! Volte sempre ao Quintal Gourmet.',
     proximo_cupom: String(idVenda + 1),
     meta_diaria: '900',
+    exigir_caixa_aberto: 'SIM',
+    permitir_estoque_negativo: 'NÃO',
     alerta_dias_sem_movimento: '7',
     margem_alvo: '35',
     semeado_em: agora,

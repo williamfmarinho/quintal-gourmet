@@ -69,6 +69,12 @@ Depois do deploy, confira `https://SEU-PROJETO.vercel.app/api/saude` — deve re
 > **Nada de segredo entra no Git.** `.env.local` está no `.gitignore`; as chaves ficam
 > apenas na sua máquina e nas variáveis de ambiente da Vercel.
 
+> **Pausa automática do Supabase.** No plano gratuito, o banco é pausado após 7 dias sem
+> uso e o site passa a responder *"Banco de dados indisponível"*. Para evitar, o `vercel.json`
+> agenda um acesso diário a `/api/saude` (09h de Brasília), que mantém o projeto ativo. Se
+> mesmo assim pausar (por exemplo, se o agendamento for removido), basta clicar em
+> **Restore project** no painel do Supabase — os dados não se perdem.
+
 
 ### Recomeçar o estoque do zero
 

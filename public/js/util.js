@@ -228,7 +228,7 @@ export function graficoBarras(itens, { rotulo, valor, formato = dinheiro, cor = 
 }
 
 export function etiquetaSituacao(situacao) {
-  const mapa = { OK: 'ok', 'ATENÇÃO': 'atencao', 'CRÍTICO': 'critico', ZERADO: 'zerado' };
+  const mapa = { OK: 'ok', 'ATENÇÃO': 'atencao', 'CRÍTICO': 'critico', ZERADO: 'zerado', NEGATIVO: 'zerado' };
   return `<span class="etiqueta ${mapa[situacao] || 'neutra'}">${situacao}</span>`;
 }
 

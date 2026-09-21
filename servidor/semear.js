@@ -454,7 +454,7 @@ async function semear({ forcar = false, gravar = true, silencioso = false } = {}
     proximo_cupom: String(idVenda + 1),
     meta_diaria: '900',
     exigir_caixa_aberto: 'SIM',
-    permitir_estoque_negativo: 'NÃO',
+    permitir_estoque_negativo: 'SIM',
     alerta_dias_sem_movimento: '7',
     margem_alvo: '35',
     semeado_em: agora,

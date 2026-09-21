@@ -6,7 +6,7 @@ import {
   abrirModal, etiquetaSituacao, miniatura, fotoMini, iniciaisProduto,
 } from '../util.js';
 
-const SITUACOES = ['OK', 'ATENÇÃO', 'CRÍTICO', 'ZERADO'];
+const SITUACOES = ['OK', 'ATENÇÃO', 'CRÍTICO', 'ZERADO', 'NEGATIVO'];
 
 export async function montar(raiz, contexto) {
   const admin = contexto.ehAdmin();
@@ -77,7 +77,7 @@ export async function montar(raiz, contexto) {
     const valorCusto = lista.reduce((s, p) => s + p.valor_estoque_custo, 0);
     const valorVenda = lista.reduce((s, p) => s + p.valor_estoque_venda, 0);
     const margemMedia = valorVenda > 0 ? ((valorVenda - valorCusto) / valorVenda) * 100 : 0;
-    const criticos = lista.filter((p) => p.situacao === 'CRÍTICO' || p.situacao === 'ZERADO').length;
+    const criticos = lista.filter((p) => ['CRÍTICO', 'ZERADO', 'NEGATIVO'].includes(p.situacao)).length;
 
     tela.querySelector('#resumo').innerHTML = `
       <div class="indicador"><div class="rotulo">Itens cadastrados</div><div class="valor">${numero(lista.length)}</div><div class="nota">${dados.categorias.length} categorias</div></div>

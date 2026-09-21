@@ -96,6 +96,7 @@ rotas.get('/sessao', auth.exigirLogin, responder(async (req) => {
     usuario: { usuario: req.sessao.usuario, nome: req.sessao.nome, perfil: req.sessao.perfil },
     caixa: caixa ? await dominio.resumoCaixa(req.repo, caixa) : null,
     loja: await dominio.dadosDaLoja(req.repo),
+    parametros: await dominio.parametrosDeOperacao(req.repo),
   };
 }));
 

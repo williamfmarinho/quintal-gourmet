@@ -94,6 +94,7 @@ function diasDesde(iso) {
  * ------------------------------------------------------------------ */
 
 function situacaoEstoque(produto) {
+  if (produto.estoque < 0) return 'NEGATIVO';
   if (produto.estoque <= 0) return 'ZERADO';
   if (produto.estoque <= produto.estoque_minimo) return 'CRÍTICO';
   if (produto.estoque <= produto.estoque_minimo * 1.5) return 'ATENÇÃO';
@@ -444,11 +445,12 @@ function montarPainel({ produtos, vendas, itens30, diasAlerta, metaDiaria }) {
       valor_custo: c(enriquecidos.reduce((s, p) => s + p.valor_estoque_custo, 0)),
       valor_venda: c(enriquecidos.reduce((s, p) => s + p.valor_estoque_venda, 0)),
       criticos: enriquecidos.filter((p) => p.situacao === 'CRÍTICO').length,
-      zerados: enriquecidos.filter((p) => p.situacao === 'ZERADO').length,
+      zerados: enriquecidos.filter((p) => p.situacao === 'ZERADO' || p.situacao === 'NEGATIVO').length,
+      negativos: enriquecidos.filter((p) => p.situacao === 'NEGATIVO').length,
     },
     alertas: {
       estoque_baixo: enriquecidos
-        .filter((p) => p.ativo && (p.situacao === 'CRÍTICO' || p.situacao === 'ZERADO'))
+        .filter((p) => p.ativo && ['CRÍTICO', 'ZERADO', 'NEGATIVO'].includes(p.situacao))
         .sort((a, b) => a.estoque - b.estoque)
         .slice(0, 12),
       parados: enriquecidos

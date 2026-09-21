@@ -31,6 +31,15 @@ async function dadosDaLoja(repo) {
   };
 }
 
+/** Regras que a tela do caixa precisa conhecer para se comportar igual ao servidor. */
+async function parametrosDeOperacao(repo) {
+  const config = await repo.config();
+  return {
+    permitir_estoque_negativo: (config.permitir_estoque_negativo || 'NÃO') === 'SIM',
+    exigir_caixa_aberto: (config.exigir_caixa_aberto || 'SIM') === 'SIM',
+  };
+}
+
 /* ------------------------------------------------------------------ *
  * Produtos
  * ------------------------------------------------------------------ */
@@ -639,6 +648,7 @@ module.exports = {
   MOTIVOS_AJUSTE,
   FORMAS_PAGAMENTO,
   dadosDaLoja,
+  parametrosDeOperacao,
   listarProdutos,
   categorias,
   salvarProduto,

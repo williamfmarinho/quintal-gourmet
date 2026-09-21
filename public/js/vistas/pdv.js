@@ -23,8 +23,11 @@ const valorNumerico = (texto) => {
 };
 
 export async function montar(raiz, contexto) {
-  const dados = await api('/api/produtos');
+  const [dados, sessao] = await Promise.all([api('/api/produtos'), api('/api/sessao')]);
   let produtos = dados.produtos.filter((p) => p.ativo);
+  // Com a trava desligada, o caixa vende mesmo sem saldo e o estoque fica negativo.
+  const permiteNegativo = Boolean(sessao.parametros && sessao.parametros.permitir_estoque_negativo);
+  const temSaldo = (disponivel, pedido) => permiteNegativo || pedido <= disponivel;
   const categorias = dados.categorias.map((c) => c.nome);
 
   const carrinho = [];
@@ -119,10 +122,11 @@ export async function montar(raiz, contexto) {
     }
     lista.slice(0, 60).forEach((produto, i) => {
       const semEstoque = produto.estoque <= 0;
+      const bloqueado = semEstoque && !permiteNegativo;
       const mini = fotoMini(produto);
       const critico = !semEstoque && produto.estoque <= produto.estoque_minimo;
       const botao = html(`
-        <button class="produto-tile ${semEstoque ? 'sem-estoque' : ''}" style="--i:${i}" ${semEstoque ? 'disabled' : ''}>
+        <button class="produto-tile ${bloqueado ? 'sem-estoque' : ''}" style="--i:${i}" ${bloqueado ? 'disabled' : ''}>
           <span class="tile-vitrine">
             ${mini
               ? `<img src="${escapar(mini)}" alt="${escapar(produto.descricao)}" loading="lazy"
@@ -130,7 +134,9 @@ export async function montar(raiz, contexto) {
                      onerror="if (!this.dataset.tentou) { this.dataset.tentou = 1; this.src = this.dataset.cheia; } else { this.remove(); }">`
               : `<span class="sem-foto">${escapar(iniciaisProduto(produto.descricao))}</span>`}
             <span class="tile-selo-estoque ${semEstoque ? 'zerado' : critico ? 'baixo' : ''}">
-              ${semEstoque ? 'sem estoque' : `${numero(produto.estoque)} ${escapar(produto.unidade.toLowerCase())}`}
+              ${produto.estoque < 0
+                ? `${numero(produto.estoque)} ${escapar(produto.unidade.toLowerCase())}`
+                : semEstoque ? 'sem estoque' : `${numero(produto.estoque)} ${escapar(produto.unidade.toLowerCase())}`}
             </span>
             <span class="tile-preco-flutuante">${dinheiro(produto.preco_venda)}</span>
           </span>
@@ -150,7 +156,7 @@ export async function montar(raiz, contexto) {
   function adicionar(produto, quantidade = 1) {
     const existente = carrinho.find((i) => i.codigo === produto.codigo);
     const noCarrinho = existente ? existente.quantidade : 0;
-    if (noCarrinho + quantidade > produto.estoque) {
+    if (!temSaldo(produto.estoque, noCarrinho + quantidade)) {
       avisar(`Estoque insuficiente de ${produto.descricao} (disponível: ${numero(produto.estoque)}).`, 'erro');
       return;
     }
@@ -216,7 +222,7 @@ export async function montar(raiz, contexto) {
         desenharComanda();
       });
       linha.querySelector('[data-acao="mais"]').addEventListener('click', () => {
-        if (item.quantidade + 1 > item.estoque) {
+        if (!temSaldo(item.estoque, item.quantidade + 1)) {
           avisar(`Estoque insuficiente (disponível: ${numero(item.estoque)}).`, 'erro');
           return;
         }
@@ -231,7 +237,7 @@ export async function montar(raiz, contexto) {
       campo.addEventListener('change', () => {
         const nova = valorNumerico(campo.value);
         if (nova <= 0) carrinho.splice(carrinho.indexOf(item), 1);
-        else if (nova > item.estoque) {
+        else if (!temSaldo(item.estoque, nova)) {
           avisar(`Estoque insuficiente (disponível: ${numero(item.estoque)}).`, 'erro');
         } else item.quantidade = nova;
         desenharComanda();

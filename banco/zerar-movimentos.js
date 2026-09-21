@@ -12,6 +12,12 @@
  *   --com-saidas-de-venda apaga também as saídas geradas pelas vendas
  *                         (o cupom continua, mas o produto perde o histórico
  *                          de movimentação — use apenas se for isso mesmo)
+ *   --com-vendas          apaga TODO o histórico de vendas: cupons, itens,
+ *                         pagamentos, saídas e movimentos de caixa gerados por
+ *                         venda, estornos, e recomeça a numeração em QG-000001.
+ *                         Os turnos de caixa ficam, com os totais de venda zerados.
+ *   --com-caixas          apaga também os turnos de caixa e todos os seus movimentos
+ *   --so-vendas           atalho: --com-vendas sem mexer em estoque nem entradas
  */
 
 const { carregarAmbiente } = require('../servidor/ambiente');
@@ -24,6 +30,9 @@ const { obterPool } = require('../servidor/armazenamento/postgres');
 const confirmar = process.argv.includes('--confirmar');
 const comAjustes = process.argv.includes('--com-ajustes');
 const comSaidasDeVenda = process.argv.includes('--com-saidas-de-venda');
+const soVendas = process.argv.includes('--so-vendas');
+const comVendas = process.argv.includes('--com-vendas') || soVendas;
+const comCaixas = process.argv.includes('--com-caixas');
 
 async function retrato(pool) {
   const { rows } = await pool.query(`
@@ -33,6 +42,10 @@ async function retrato(pool) {
       (select count(*)::int from saidas where tipo = 'VENDA') as saidas_de_venda,
       (select count(*)::int from ajustes) as ajustes,
       (select count(*)::int from vendas) as vendas,
+      (select count(*)::int from mov_caixa where tipo = 'VENDA') as mov_caixa_de_venda,
+      (select count(*)::int from ajustes where motivo = 'ESTORNO DE VENDA') as estornos,
+      (select count(*)::int from caixas) as caixas,
+      (select count(*)::int from caixas where status = 'ABERTO') as caixas_abertos,
       (select count(*)::int from produtos where estoque <> 0) as produtos_com_estoque,
       (select coalesce(round(sum(estoque * custo_medio), 2), 0) from produtos) as valor_em_estoque
   `);
@@ -56,12 +69,14 @@ async function principal() {
   if (!confirmar) {
     console.log(`
   Nada foi alterado. O que aconteceria com --confirmar:
-    • estoque de todos os produtos → 0
-    • entradas apagadas ................ ${antes.entradas}
-    • saídas sem venda apagadas ........ ${antes.saidas_sem_venda}
-    • saídas de venda apagadas ......... ${comSaidasDeVenda ? antes.saidas_de_venda : '0 (preservadas)'}
-    • ajustes apagados ................. ${comAjustes ? antes.ajustes : '0 (preservados)'}
-    • vendas, itens e pagamentos ....... preservados (${antes.vendas} cupons)
+    • estoque de todos os produtos → 0 ${soVendas ? '(pulado: --so-vendas)' : ''}
+    • entradas apagadas ................ ${soVendas ? '0 (pulado)' : antes.entradas}
+    • saídas sem venda apagadas ........ ${soVendas ? '0 (pulado)' : antes.saidas_sem_venda}
+    • saídas de venda apagadas ......... ${comSaidasDeVenda || comVendas ? antes.saidas_de_venda : '0 (preservadas)'}
+    • ajustes apagados ................. ${comAjustes ? antes.ajustes : comVendas ? `${antes.estornos} (só estornos de venda)` : '0 (preservados)'}
+    • cupons de venda apagados ......... ${comVendas ? `${antes.vendas} (com itens e pagamentos; numeração volta a QG-000001)` : `0 (${antes.vendas} preservados)`}
+    • movimentos de caixa de venda ..... ${comVendas ? antes.mov_caixa_de_venda : '0 (preservados)'}
+    • turnos de caixa .................. ${comCaixas ? `${antes.caixas} apagados` : comVendas ? `${antes.caixas} mantidos, totais de venda zerados` : `${antes.caixas} preservados`}
 `);
     return;
   }
@@ -70,22 +85,59 @@ async function principal() {
   try {
     await cliente.query('begin');
 
-    await cliente.query('delete from entradas');
-    await cliente.query(
-      comSaidasDeVenda ? 'delete from saidas' : "delete from saidas where tipo <> 'VENDA'"
-    );
+    if (!soVendas) {
+      await cliente.query('delete from entradas');
+      await cliente.query(
+        comSaidasDeVenda ? 'delete from saidas' : "delete from saidas where tipo <> 'VENDA'"
+      );
+      await cliente.query(`
+        update produtos
+           set estoque = 0,
+               ultima_entrada = null,
+               atualizado_em = now()
+      `);
+      // As sequências recomeçam do 1 para os lançamentos manuais.
+      await cliente.query("select setval(pg_get_serial_sequence('entradas', 'id'), 1, false)");
+      if (comSaidasDeVenda) await cliente.query("select setval(pg_get_serial_sequence('saidas', 'id'), 1, false)");
+    }
+
     if (comAjustes) await cliente.query('delete from ajustes');
 
-    await cliente.query(`
-      update produtos
-         set estoque = 0,
-             ultima_entrada = null,
-             atualizado_em = now()
-    `);
+    if (comVendas) {
+      // Itens e pagamentos caem em cascata pela chave estrangeira.
+      await cliente.query('delete from vendas');
+      await cliente.query("delete from saidas where tipo = 'VENDA'");
+      await cliente.query("delete from mov_caixa where tipo = 'VENDA'");
+      if (!comAjustes) await cliente.query("delete from ajustes where motivo = 'ESTORNO DE VENDA'");
 
-    // As sequências recomeçam do 1 para os lançamentos manuais.
-    await cliente.query("select setval(pg_get_serial_sequence('entradas', 'id'), 1, false)");
-    if (comSaidasDeVenda) await cliente.query("select setval(pg_get_serial_sequence('saidas', 'id'), 1, false)");
+      await cliente.query("select setval('cupom_seq'::regclass, 1, false)");
+      await cliente.query("select setval(pg_get_serial_sequence('vendas', 'id'), 1, false)");
+      await cliente.query("select setval(pg_get_serial_sequence('pagamentos', 'id'), 1, false)");
+      const restam = await cliente.query('select 1 from saidas limit 1');
+      if (!restam.rowCount) {
+        await cliente.query("select setval(pg_get_serial_sequence('saidas', 'id'), 1, false)");
+      }
+
+      // Turnos que ficam: sem vendas, o esperado na gaveta é fundo + suprimentos − sangrias.
+      if (!comCaixas) {
+        await cliente.query(`
+          update caixas
+             set vendas_total = 0,
+                 vendas_dinheiro = 0,
+                 saldo_esperado = valor_abertura + suprimentos - sangrias,
+                 diferenca = case when status = 'FECHADO'
+                                  then saldo_informado - (valor_abertura + suprimentos - sangrias)
+                                  else 0 end
+        `);
+      }
+    }
+
+    if (comCaixas) {
+      await cliente.query('delete from mov_caixa');
+      await cliente.query('delete from caixas');
+      await cliente.query("select setval(pg_get_serial_sequence('caixas', 'id'), 1, false)");
+      await cliente.query("select setval(pg_get_serial_sequence('mov_caixa', 'id'), 1, false)");
+    }
 
     await cliente.query('commit');
   } catch (erro) {
@@ -96,7 +148,9 @@ async function principal() {
   }
 
   mostrar('Situação depois:', await retrato(pool));
-  console.log('\n  Pronto. O estoque agora é alimentado pelas entradas lançadas na tela de Estoque.\n');
+  console.log(comVendas
+    ? '\n  Pronto. O histórico de vendas foi zerado; o próximo cupom será QG-000001.\n'
+    : '\n  Pronto. O estoque agora é alimentado pelas entradas lançadas na tela de Estoque.\n');
 }
 
 principal()

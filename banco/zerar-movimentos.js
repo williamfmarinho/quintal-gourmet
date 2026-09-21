@@ -110,6 +110,8 @@ async function principal() {
       await cliente.query("delete from mov_caixa where tipo = 'VENDA'");
       if (!comAjustes) await cliente.query("delete from ajustes where motivo = 'ESTORNO DE VENDA'");
 
+      // Sem vendas no histórico, o produto também não tem "última saída".
+      await cliente.query('update produtos set ultima_saida = null');
       await cliente.query("select setval('cupom_seq'::regclass, 1, false)");
       await cliente.query("select setval(pg_get_serial_sequence('vendas', 'id'), 1, false)");
       await cliente.query("select setval(pg_get_serial_sequence('pagamentos', 'id'), 1, false)");

@@ -87,9 +87,21 @@ npm run zerar-estoque -- --confirmar
 ```
 
 Zera o estoque de todos os produtos, apaga as entradas e as saídas que não vieram de venda,
-e preserva cupons, itens e pagamentos. As saídas geradas por vendas ficam de pé, porque são
-parte do histórico de vendas; para apagá-las também, acrescente `--com-saidas-de-venda`
-(e `--com-ajustes` para limpar os ajustes de inventário).
+e preserva cupons, itens e pagamentos. Opções para ir além:
+
+| Opção | Efeito |
+|---|---|
+| `--com-vendas` | apaga cupons, itens, pagamentos e tudo que deriva deles; numeração volta a QG-000001 |
+| `--so-vendas` | só as vendas, sem mexer em estoque e entradas |
+| `--com-caixas` | apaga os turnos de caixa e seus movimentos |
+| `--com-ajustes` | apaga os ajustes de inventário |
+| `--com-saidas-de-venda` | apaga as saídas geradas por venda (o cupom fica) |
+
+Para deixar o sistema **100% zerado** (catálogo, preços, fotos e usuários ficam):
+
+```bash
+npm run zerar-estoque -- --confirmar --com-vendas --com-caixas --com-ajustes --com-saidas-de-venda
+```
 
 > Vale para a base publicada no Supabase. No modo planilha, use `npm run resetar`.
 

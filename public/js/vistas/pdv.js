@@ -23,8 +23,11 @@ const valorNumerico = (texto) => {
 };
 
 export async function montar(raiz, contexto) {
-  const [dados, sessao] = await Promise.all([api('/api/produtos'), api('/api/sessao')]);
+  const [dados, sessao, dadosKits] = await Promise.all([
+    api('/api/produtos'), api('/api/sessao'), api('/api/kits', { parametros: { somenteAtivos: 'true' } }),
+  ]);
   let produtos = dados.produtos.filter((p) => p.ativo);
+  let kits = dadosKits.kits;
   // Com a trava desligada, o caixa vende mesmo sem saldo e o estoque fica negativo.
   const permiteNegativo = Boolean(sessao.parametros && sessao.parametros.permitir_estoque_negativo);
   const temSaldo = (disponivel, pedido) => permiteNegativo || pedido <= disponivel;
@@ -33,6 +36,7 @@ export async function montar(raiz, contexto) {
   const carrinho = [];
   let descontoGeral = 0;
   let categoriaAtiva = '';
+  let mostrandoKits = false;
   let cliente = '';
 
   limpar(raiz);
@@ -88,12 +92,25 @@ export async function montar(raiz, contexto) {
 
   function desenharChips() {
     limpar(chips);
-    const todos = html(`<button class="chip ${categoriaAtiva ? '' : 'ativo'}">Todos</button>`);
-    todos.addEventListener('click', () => { categoriaAtiva = ''; desenharChips(); desenharGrade(); });
+
+    const todos = html(`<button class="chip ${!mostrandoKits && !categoriaAtiva ? 'ativo' : ''}">Todos</button>`);
+    todos.addEventListener('click', () => {
+      mostrandoKits = false; categoriaAtiva = ''; desenharChips(); desenharGrade();
+    });
     chips.appendChild(todos);
+
+    if (kits.length) {
+      const chipKits = html(`<button class="chip chip-kits ${mostrandoKits ? 'ativo' : ''}">🎁 Kits (${kits.length})</button>`);
+      chipKits.addEventListener('click', () => {
+        mostrandoKits = true; categoriaAtiva = ''; desenharChips(); desenharGrade();
+      });
+      chips.appendChild(chipKits);
+    }
+
     categorias.forEach((categoria) => {
-      const chip = html(`<button class="chip ${categoriaAtiva === categoria ? 'ativo' : ''}">${escapar(categoria)}</button>`);
+      const chip = html(`<button class="chip ${!mostrandoKits && categoriaAtiva === categoria ? 'ativo' : ''}">${escapar(categoria)}</button>`);
       chip.addEventListener('click', () => {
+        mostrandoKits = false;
         categoriaAtiva = categoriaAtiva === categoria ? '' : categoria;
         desenharChips();
         desenharGrade();
@@ -113,7 +130,47 @@ export async function montar(raiz, contexto) {
     });
   }
 
+  /** Cards dos kits, com o preço cheio riscado e o que o cliente paga em destaque. */
+  function desenharGradeDeKits() {
+    const termo = busca.value.trim().toUpperCase();
+    const lista = kits.filter((k) => !termo
+      || k.nome.toUpperCase().includes(termo)
+      || String(k.codigo).toUpperCase().includes(termo)
+      || k.itens.some((i) => i.descricao.toUpperCase().includes(termo)));
+
+    limpar(grade);
+    if (!lista.length) {
+      grade.appendChild(html('<div class="vazio" style="grid-column:1/-1"><span class="icone">🎁</span>Nenhum kit encontrado.</div>'));
+      return;
+    }
+
+    lista.forEach((kit, i) => {
+      const semEstoque = kit.kits_possiveis <= 0;
+      const bloqueado = semEstoque && !permiteNegativo;
+      const botao = html(`
+        <button class="produto-tile kit-tile ${bloqueado ? 'sem-estoque' : ''}" style="--i:${i}" ${bloqueado ? 'disabled' : ''}>
+          <span class="kit-tile-topo">
+            <span class="kit-tile-selo">KIT</span>
+            <span class="tile-selo-estoque ${semEstoque ? 'zerado' : ''}">
+              ${semEstoque ? 'sem estoque' : `${numero(kit.kits_possiveis)} disponíveis`}
+            </span>
+          </span>
+          <span class="kit-tile-nome">${escapar(kit.nome)}</span>
+          <span class="kit-tile-itens">${kit.itens.map((i2) => `${numero(i2.quantidade)}× ${escapar(i2.descricao)}`).join(' · ')}</span>
+          <span class="kit-tile-precos">
+            <span class="riscado">${dinheiro(kit.preco_lista)}</span>
+            <span class="kit-tile-preco">${dinheiro(kit.preco_efetivo)}</span>
+            <span class="etiqueta ok">-${Math.round(kit.desconto_percentual_efetivo)}%</span>
+          </span>
+        </button>
+      `);
+      botao.addEventListener('click', () => adicionarKit(kit));
+      grade.appendChild(botao);
+    });
+  }
+
   function desenharGrade() {
+    if (mostrandoKits) { desenharGradeDeKits(); return; }
     const lista = filtrados();
     limpar(grade);
     if (!lista.length) {
@@ -175,6 +232,35 @@ export async function montar(raiz, contexto) {
     desenharComanda(produto.codigo);
   }
 
+  /** O kit entra como uma linha só na comanda; o servidor é quem o abre em itens. */
+  function adicionarKit(kit, quantidade = 1) {
+    const existente = carrinho.find((i) => i.tipo === 'KIT' && i.kit_id === kit.id);
+    const noCarrinho = existente ? existente.quantidade : 0;
+
+    if (!permiteNegativo && noCarrinho + quantidade > kit.kits_possiveis) {
+      avisar(`Estoque insuficiente para montar mais um ${kit.nome} (dá para ${numero(kit.kits_possiveis)}).`, 'erro');
+      return;
+    }
+
+    if (existente) existente.quantidade += quantidade;
+    else {
+      carrinho.push({
+        tipo: 'KIT',
+        kit_id: kit.id,
+        codigo: kit.codigo,
+        descricao: kit.nome,
+        unidade: 'KIT',
+        foto: kit.itens[0] ? kit.itens[0].foto : '',
+        preco_unitario: kit.preco_efetivo,
+        preco_lista: kit.preco_lista,
+        estoque: kit.kits_possiveis,
+        itens: kit.itens,
+        quantidade,
+      });
+    }
+    desenharComanda(kit.codigo);
+  }
+
   function totalizar() {
     const subtotal = carrinho.reduce((s, i) => s + i.preco_unitario * i.quantidade, 0);
     const total = Math.max(0, subtotal - descontoGeral);
@@ -202,7 +288,10 @@ export async function montar(raiz, contexto) {
             ${miniatura(item, 'pequena')}
             <div style="min-width:0">
               <div class="titulo">${escapar(item.descricao)}</div>
-              <div class="info">${escapar(item.codigo)} · ${dinheiro(item.preco_unitario)} / ${escapar(item.unidade.toLowerCase())}</div>
+              <div class="info">${item.tipo === 'KIT'
+              ? `${escapar(item.codigo)} · ${dinheiro(item.preco_unitario)} · <span class="positivo">economia ${dinheiro((item.preco_lista - item.preco_unitario) * item.quantidade)}</span>`
+              : `${escapar(item.codigo)} · ${dinheiro(item.preco_unitario)} / ${escapar(item.unidade.toLowerCase())}`}</div>
+            ${item.tipo === 'KIT' ? `<div class="info kit-composicao">${item.itens.map((i2) => `${numero(i2.quantidade * item.quantidade)}× ${escapar(i2.descricao)}`).join(' · ')}</div>` : ''}
             </div>
           </div>
           <div class="total-item">${dinheiro(item.preco_unitario * item.quantidade)}</div>
@@ -532,10 +621,14 @@ export async function montar(raiz, contexto) {
         const resposta = await api('/api/vendas', {
           metodo: 'POST',
           corpo: {
-            itens: carrinho.map((i) => ({
+            itens: carrinho.filter((i) => i.tipo !== 'KIT').map((i) => ({
               codigo: i.codigo,
               quantidade: i.quantidade,
               preco_unitario: i.preco_unitario,
+            })),
+            kits: carrinho.filter((i) => i.tipo === 'KIT').map((i) => ({
+              kit_id: i.kit_id,
+              quantidade: i.quantidade,
             })),
             pagamentos,
             desconto: descontoGeral,
@@ -578,8 +671,12 @@ export async function montar(raiz, contexto) {
   }
 
   async function recarregarProdutos() {
-    const novos = await api('/api/produtos');
+    const [novos, novosKits] = await Promise.all([
+      api('/api/produtos'), api('/api/kits', { parametros: { somenteAtivos: 'true' } }),
+    ]);
     produtos = novos.produtos.filter((p) => p.ativo);
+    kits = novosKits.kits;
+    desenharChips();
     desenharGrade();
   }
 
@@ -596,6 +693,16 @@ export async function montar(raiz, contexto) {
     const multiplicador = termo.match(/^(\d+(?:[.,]\d+)?)\s*[*x]\s*(.+)$/i);
     const alvo = multiplicador ? multiplicador[2].trim().toUpperCase() : termo.toUpperCase();
     const quantidade = multiplicador ? valorNumerico(multiplicador[1]) : 1;
+
+    if (mostrandoKits) {
+      const kitAchado = kits.find((k) => k.codigo.toUpperCase() === alvo || k.nome.toUpperCase().includes(alvo));
+      if (kitAchado) {
+        adicionarKit(kitAchado, quantidade);
+        busca.value = '';
+        desenharGrade();
+        return;
+      }
+    }
 
     const exato = produtos.find((p) => p.codigo.toUpperCase() === alvo || String(p.codigo_barras) === alvo);
     const candidatos = exato ? [exato] : filtrados();

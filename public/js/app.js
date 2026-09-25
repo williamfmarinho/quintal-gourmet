@@ -11,6 +11,7 @@ import * as vendas from './vistas/vendas.js';
 import * as relatorios from './vistas/relatorios.js';
 import * as caixa from './vistas/caixa.js';
 import * as sistema from './vistas/sistema.js';
+import * as kits from './vistas/kits.js';
 
 const ICONE = {
   painel: '<path d="M3 13h8V3H3zM13 21h8V11h-8zM13 7h8V3h-8zM3 21h8v-4H3z"/>',
@@ -20,6 +21,7 @@ const ICONE = {
   vendas: '<path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h5"/>',
   relatorios: '<path d="M3 3v18h18"/><path d="m7 15 4-5 3 3 5-7"/>',
   caixa: '<path d="M2 8h20v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/><path d="M2 8 5 3h14l3 5M12 12v4M9 14h6"/>',
+  kits: '<path d="M20 12v9H4v-9"/><path d="M2 7h20v5H2zM12 21V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>',
   sistema: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7.5 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 13.6H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.7 7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9.4A1.6 1.6 0 0 0 10.4 3V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8v.1a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/>',
 };
 
@@ -30,6 +32,7 @@ const TELAS = [
   { id: 'vendas', titulo: 'Vendas', subtitulo: 'Cupons emitidos, reimpressão e cancelamento', grupo: 'Operação', modulo: vendas, icone: 'vendas', atalho: 'Alt+4' },
 
   { id: 'painel', titulo: 'Painel', subtitulo: 'Visão geral do dia e alertas do negócio', grupo: 'Gestão', modulo: painel, icone: 'painel', admin: true, atalho: 'Alt+5' },
+  { id: 'kits', titulo: 'Kits', subtitulo: 'Combinações de produtos com preço fechado ou desconto', grupo: 'Gestão', modulo: kits, icone: 'kits', admin: true, atalho: 'Alt+9' },
   { id: 'estoque', titulo: 'Estoque', subtitulo: 'Entradas, ajustes de inventário e perdas', grupo: 'Gestão', modulo: estoque, icone: 'estoque', admin: true, atalho: 'Alt+6' },
   { id: 'relatorios', titulo: 'Lucros e relatórios', subtitulo: 'Resultado por período, curva ABC e perdas', grupo: 'Gestão', modulo: relatorios, icone: 'relatorios', admin: true, atalho: 'Alt+7' },
   { id: 'sistema', titulo: 'Sistema', subtitulo: 'Usuários, dados da loja e backup da base', grupo: 'Gestão', modulo: sistema, icone: 'sistema', admin: true, atalho: 'Alt+8' },
@@ -207,7 +210,7 @@ async function roteirizar() {
 }
 
 function atalhosGlobais(evento) {
-  if (evento.altKey && !evento.ctrlKey && /^[1-8]$/.test(evento.key)) {
+  if (evento.altKey && !evento.ctrlKey && /^[1-9]$/.test(evento.key)) {
     const lista = telasPermitidas();
     const indice = Number(evento.key) - 1;
     const tela = lista.find((t) => t.atalho === `Alt+${evento.key}`) || lista[indice];

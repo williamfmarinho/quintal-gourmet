@@ -125,6 +125,29 @@ const ESQUEMA = {
     { chave: 'custo_unitario', titulo: 'CUSTO UNIT.', tipo: T.moeda, largura: 13 },
     { chave: 'custo_total', titulo: 'CUSTO TOTAL', tipo: T.moeda, largura: 13 },
     { chave: 'lucro', titulo: 'LUCRO', tipo: T.moeda, largura: 13 },
+    { chave: 'kit_id', titulo: 'KIT', tipo: T.inteiro, largura: 8 },
+    { chave: 'kit_nome', titulo: 'NOME DO KIT', tipo: T.texto, largura: 26 },
+  ],
+
+  KITS: [
+    { chave: 'id', titulo: 'ID', tipo: T.inteiro, largura: 8 },
+    { chave: 'codigo', titulo: 'CÓDIGO', tipo: T.texto, largura: 12 },
+    { chave: 'nome', titulo: 'NOME DO KIT', tipo: T.texto, largura: 34 },
+    { chave: 'modo_preco', titulo: 'MODO', tipo: T.texto, largura: 14 },
+    { chave: 'preco_venda', titulo: 'PREÇO FIXO', tipo: T.moeda, largura: 13 },
+    { chave: 'desconto_percentual', titulo: 'DESCONTO %', tipo: T.numero, largura: 12 },
+    { chave: 'ativo', titulo: 'ATIVO', tipo: T.booleano, largura: 8 },
+    { chave: 'observacao', titulo: 'OBSERVAÇÃO', tipo: T.texto, largura: 30 },
+    { chave: 'criado_em', titulo: 'CRIADO EM', tipo: T.datahora, largura: 18 },
+    { chave: 'atualizado_em', titulo: 'ATUALIZADO EM', tipo: T.datahora, largura: 18 },
+  ],
+
+  KIT_ITENS: [
+    { chave: 'kit_id', titulo: 'KIT', tipo: T.inteiro, largura: 8 },
+    { chave: 'seq', titulo: 'SEQ', tipo: T.inteiro, largura: 6 },
+    { chave: 'codigo', titulo: 'CÓDIGO', tipo: T.texto, largura: 12 },
+    { chave: 'descricao', titulo: 'DESCRIÇÃO', tipo: T.texto, largura: 42 },
+    { chave: 'quantidade', titulo: 'QTD', tipo: T.numero, largura: 9 },
   ],
 
   PAGAMENTOS: [

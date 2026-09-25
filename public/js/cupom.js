@@ -4,17 +4,41 @@ import { abrirModal, dinheiro, numero, escapar } from './util.js';
 
 export function montarCupom({ venda, itens, pagamentos, troco = 0, loja = {}, operador_nome }) {
   const data = new Date(venda.data);
-  const linhas = itens.map((item) => `
+  // Itens vendidos dentro de um kit saem agrupados sob o nome do kit.
+  const grupos = [];
+  itens.forEach((item) => {
+    const chave = item.kit_id ? `kit-${item.kit_id}-${item.kit_nome}` : `item-${item.codigo}-${grupos.length}`;
+    const existente = item.kit_id && grupos.find((g) => g.chave === chave);
+    if (existente) existente.itens.push(item);
+    else grupos.push({ chave, kit: item.kit_id ? item.kit_nome : '', itens: [item] });
+  });
+
+  const linhaDoItem = (item, dentroDeKit) => `
     <tr>
-      <td colspan="3" class="item-nome">${escapar(item.descricao)}</td>
+      <td colspan="3" class="item-nome">${dentroDeKit ? '&nbsp;&nbsp;' : ''}${escapar(item.descricao)}</td>
     </tr>
     <tr>
-      <td style="width:52%">${escapar(item.codigo)}</td>
+      <td style="width:52%">${dentroDeKit ? '&nbsp;&nbsp;' : ''}${escapar(item.codigo)}</td>
       <td style="width:26%">${numero(item.quantidade)} x ${dinheiro(item.preco_unitario).replace('R$', '').trim()}</td>
       <td style="width:22%;text-align:right">${dinheiro(item.total).replace('R$', '').trim()}</td>
     </tr>
-    ${item.desconto > 0 ? `<tr><td colspan="3" style="text-align:right;font-size:10px">desconto -${dinheiro(item.desconto)}</td></tr>` : ''}
-  `).join('');
+    ${!dentroDeKit && item.desconto > 0 ? `<tr><td colspan="3" style="text-align:right;font-size:10px">desconto -${dinheiro(item.desconto)}</td></tr>` : ''}
+  `;
+
+  const linhas = grupos.map((grupo) => {
+    if (!grupo.kit) return linhaDoItem(grupo.itens[0], false);
+    const totalKit = grupo.itens.reduce((s, i) => s + i.total, 0);
+    const economia = grupo.itens.reduce((s, i) => s + i.desconto, 0);
+    return `
+      <tr><td colspan="3" class="item-nome">** ${escapar(grupo.kit)} **</td></tr>
+      ${grupo.itens.map((item) => linhaDoItem(item, true)).join('')}
+      <tr>
+        <td colspan="2" style="font-weight:600">total do kit</td>
+        <td style="text-align:right;font-weight:600">${dinheiro(totalKit).replace('R$', '').trim()}</td>
+      </tr>
+      ${economia > 0 ? `<tr><td colspan="3" style="text-align:right;font-size:10px">voce economizou ${dinheiro(economia)}</td></tr>` : ''}
+    `;
+  }).join('');
 
   // No dinheiro imprime-se o valor entregue pelo cliente; o troco aparece logo abaixo.
   const formas = pagamentos.map((p) => `

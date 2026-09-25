@@ -26,6 +26,8 @@ const ABAS_EXPORTACAO = {
   MOV_CAIXA: 'mov_caixa',
   USUARIOS: 'usuarios',
   CONFIG: 'config',
+  KITS: 'kits',
+  KIT_ITENS: 'kit_itens',
 };
 
 const app = express();
@@ -115,6 +117,22 @@ rotas.get('/produtos/:codigo', auth.exigirLogin, responder(async (req) =>
 rotas.post('/produtos', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => ({
   produto: await dominio.salvarProduto(req.repo, req.body, req.sessao),
 })));
+
+/* ------------------------------------------------------------------ *
+ * Kits
+ * ------------------------------------------------------------------ */
+
+// O caixa também lista kits (para vender); criar e apagar é só do administrador.
+rotas.get('/kits', auth.exigirLogin, responder(async (req) => ({
+  kits: await dominio.listarKits(req.repo, req.query),
+})));
+
+rotas.post('/kits', auth.exigirLogin, auth.exigirAdmin, responder(async (req) => ({
+  kit: await dominio.salvarKit(req.repo, req.body, req.sessao),
+})));
+
+rotas.delete('/kits/:id', auth.exigirLogin, auth.exigirAdmin, responder(async (req) =>
+  dominio.excluirKit(req.repo, req.params.id)));
 
 /* ------------------------------------------------------------------ *
  * Vendas

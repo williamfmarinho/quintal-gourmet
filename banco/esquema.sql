@@ -193,11 +193,39 @@ create table if not exists config (
 -- Numeração dos cupons: sequência do banco, à prova de concorrência.
 create sequence if not exists cupom_seq start 1;
 
+create table if not exists kits (
+  id                   bigserial primary key,
+  codigo               text not null unique,
+  nome                 text not null,
+  modo_preco           text not null default 'PERCENTUAL' check (modo_preco in ('VALOR', 'PERCENTUAL')),
+  preco_venda          numeric(12,2) not null default 0 check (preco_venda >= 0),
+  desconto_percentual  numeric(6,2) not null default 0,
+  ativo                boolean not null default true,
+  observacao           text not null default '',
+  criado_em            timestamptz not null default now(),
+  atualizado_em        timestamptz not null default now()
+);
+
+create table if not exists kit_itens (
+  kit_id      bigint not null references kits (id) on delete cascade,
+  seq         integer not null,
+  codigo      text not null references produtos (codigo),
+  descricao   text not null default '',
+  quantidade  numeric(12,3) not null check (quantidade > 0),
+  primary key (kit_id, seq)
+);
+
+create index if not exists kit_itens_codigo on kit_itens (codigo);
+
 -- =====================================================================
 -- Evolução do esquema: colunas acrescentadas depois da primeira versão.
 -- =====================================================================
 
 alter table produtos add column if not exists foto text not null default '';
+
+-- Item vendido dentro de um kit guarda a referência, para o cupom e os relatórios.
+alter table venda_itens add column if not exists kit_id bigint;
+alter table venda_itens add column if not exists kit_nome text not null default '';
 
 -- =====================================================================
 -- Segurança: nenhuma tabela é exposta pela API pública do Supabase.
@@ -211,7 +239,8 @@ declare
 begin
   foreach t in array array[
     'usuarios', 'produtos', 'caixas', 'vendas', 'venda_itens',
-    'pagamentos', 'entradas', 'saidas', 'ajustes', 'mov_caixa', 'config'
+    'pagamentos', 'entradas', 'saidas', 'ajustes', 'mov_caixa', 'config',
+    'kits', 'kit_itens'
   ]
   loop
     execute format('alter table public.%I enable row level security', t);

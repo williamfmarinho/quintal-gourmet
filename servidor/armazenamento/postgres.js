@@ -17,6 +17,7 @@ types.setTypeParser(1184, (valor) => new Date(valor).toISOString());       // ti
 const TABELAS = new Set([
   'produtos', 'entradas', 'saidas', 'ajustes', 'vendas', 'venda_itens',
   'pagamentos', 'caixas', 'mov_caixa', 'usuarios', 'config',
+  'kits', 'kit_itens',
 ]);
 
 const IDENTIFICADOR = /^[a-z_][a-z0-9_]*$/;
@@ -223,6 +224,18 @@ function adaptadorSobre(executor, dentroDeTransacao) {
       const { rows } = await executor.query(sql, parametros);
       if (!rows[0]) throw new Error(`Produto não encontrado: ${codigo}`);
       return rows[0];
+    },
+
+    async remover(tabela, chave) {
+      validarTabela(tabela);
+      const parametros = [];
+      const condicoes = Object.entries(chave).map(([campo, valor]) => {
+        parametros.push(valor);
+        return `${validarCampo(campo)} = $${parametros.length}`;
+      });
+      const sql = `delete from ${tabela} where ${condicoes.join(' and ')}`;
+      const { rowCount } = await executor.query(sql, parametros);
+      return rowCount;
     },
 
     async produto(codigoOuBarras) {

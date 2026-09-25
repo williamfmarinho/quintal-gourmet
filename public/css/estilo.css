@@ -1762,3 +1762,180 @@ table.tabela .centro, .centro { text-align: center; }
 }
 
 .previa-foto .miniatura { width: 56px; height: 56px; }
+
+/* =====================================================================
+   KITS — combinações de produtos
+   O kit se apresenta como "pacote": selo, composição visível e o preço
+   cheio riscado ao lado do que o cliente realmente paga.
+   ===================================================================== */
+
+.chip-kits { border-color: rgba(224, 163, 60, .45); color: var(--dourado); }
+.chip-kits.ativo { background: rgba(224, 163, 60, .18); border-color: var(--dourado); color: #ffe2ad; }
+
+.riscado { text-decoration: line-through; opacity: .6; }
+
+/* --- card do kit na grade do caixa --- */
+
+.kit-tile {
+  height: auto;
+  min-height: 216px;
+  padding: 14px;
+  gap: 8px;
+  background:
+    radial-gradient(130% 100% at 100% 0%, rgba(224, 163, 60, .14), transparent 60%),
+    linear-gradient(165deg, rgba(37, 28, 23, .85), rgba(23, 17, 14, .92));
+  border-color: rgba(224, 163, 60, .28);
+}
+
+.kit-tile:hover { border-color: rgba(224, 163, 60, .6); }
+
+.kit-tile-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+.kit-tile-selo {
+  font-family: var(--fonte-mono);
+  font-size: 10px;
+  letter-spacing: .18em;
+  font-weight: 700;
+  color: var(--dourado);
+  border: 1px solid rgba(224, 163, 60, .45);
+  border-radius: 30px;
+  padding: 2px 9px;
+}
+
+.kit-tile-nome {
+  font-family: var(--fonte-display);
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 1.2;
+  letter-spacing: -.01em;
+  text-align: left;
+}
+
+.kit-tile-itens {
+  font-size: 11.5px;
+  color: var(--creme-fraco);
+  line-height: 1.5;
+  text-align: left;
+  flex: 1;
+}
+
+.kit-tile-precos {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.kit-tile-precos .riscado { font-family: var(--fonte-mono); font-size: 12px; }
+
+.kit-tile-preco {
+  font-family: var(--fonte-display);
+  font-size: 21px;
+  font-weight: 600;
+  color: var(--creme);
+}
+
+.kit-composicao { color: #5f5145 !important; font-size: 10.5px !important; margin-top: 2px; }
+
+/* --- cartão do kit na tela de administração --- */
+
+.kit-cartao.inativo { opacity: .6; }
+
+.kit-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.kit-nome {
+  font-family: var(--fonte-display);
+  font-weight: 600;
+  font-size: 19px;
+  letter-spacing: -.01em;
+  line-height: 1.2;
+}
+
+.kit-itens { display: flex; flex-direction: column; gap: 8px; }
+
+.kit-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .02);
+  border: 1px solid var(--borda);
+}
+
+.kit-item-nome {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kit-precos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  align-items: end;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--borda-forte);
+}
+
+.kit-preco-final {
+  font-family: var(--fonte-display);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--dourado);
+}
+
+/* --- assistente de criação --- */
+
+.escolha-produtos {
+  max-height: 340px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 4px;
+}
+
+.escolha-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 9px;
+  border-radius: 9px;
+  border: 1px solid var(--borda);
+  background: var(--carvao-800);
+  cursor: pointer;
+  transition: var(--transicao);
+}
+
+.escolha-item:hover { border-color: var(--brasa); background: var(--carvao-700); }
+
+.escolha-item.escolhido {
+  border-color: rgba(224, 163, 60, .55);
+  background: rgba(224, 163, 60, .10);
+}
+
+.escolha-item.escolhido .passo { color: var(--dourado); border-color: rgba(224, 163, 60, .5); }
+
+.kit-resumo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: var(--raio-p);
+  border: 1px solid var(--borda);
+  background: rgba(255, 255, 255, .02);
+  margin-top: 6px;
+}

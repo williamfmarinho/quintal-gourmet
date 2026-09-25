@@ -19,9 +19,11 @@ const ABA = {
   mov_caixa: 'MOV_CAIXA',
   usuarios: 'USUARIOS',
   config: 'CONFIG',
+  kits: 'KITS',
+  kit_itens: 'KIT_ITENS',
 };
 
-const SEM_ID = new Set(['produtos', 'venda_itens', 'pagamentos', 'usuarios', 'config']);
+const SEM_ID = new Set(['produtos', 'venda_itens', 'pagamentos', 'usuarios', 'config', 'kit_itens']);
 
 function aba(tabela) {
   const nome = ABA[tabela];
@@ -134,6 +136,17 @@ function criarAdaptador() {
         linha[campo] = planilha.normalizarCampo(nome, campo, valor);
       });
       return { ...linha };
+    },
+
+    async remover(tabela, chave) {
+      const linhas = planilha.tabela(aba(tabela));
+      const sobrevivem = linhas.filter((registro) => (
+        !Object.entries(chave).every(([campo, valor]) => String(registro[campo]) === String(valor))
+      ));
+      const removidos = linhas.length - sobrevivem.length;
+      linhas.length = 0;
+      sobrevivem.forEach((registro) => linhas.push(registro));
+      return removidos;
     },
 
     /** Soma (ou subtrai) do estoque do produto e aplica campos extras. */

@@ -214,7 +214,34 @@ um caminho diferente à mão.
 
 ---
 
-## 6. Escopo
+## 6. Kits de produtos
+
+Um kit junta **dois ou mais produtos** do catálogo por um preço melhor que a soma. O
+administrador cria em *Kits* (`Alt + 9`), num assistente de dois passos: escolher os
+produtos e suas quantidades, depois dar o nome e definir o preço.
+
+O preço aceita duas formas, e os dois campos se preenchem sozinhos a partir da soma dos
+preços de lista:
+
+| Modo | Como funciona |
+|---|---|
+| **Preço fixo (R$)** | o kit custa aquele valor, mesmo que o preço dos produtos mude depois |
+| **Desconto (%)** | o preço do kit acompanha sozinho qualquer mudança de preço dos produtos |
+
+No caixa, os kits ficam na aba **🎁 Kits**, ao lado das categorias. Cada card mostra a
+composição, o preço cheio riscado, o preço do kit e quantos dá para montar com o estoque
+atual.
+
+**Estoque e lucro.** O kit não é um produto: na hora da venda ele é aberto nos componentes,
+e o preço do kit é rateado entre eles na proporção do preço de lista de cada um (a sobra de
+centavos cai no último item, de forma que a soma fecha exatamente com o preço do kit). Cada
+componente dá baixa no próprio estoque e entra nos relatórios com o seu custo, então a curva
+ABC, o CMV e o lucro continuam corretos por produto. O cupom agrupa os itens sob o nome do
+kit e mostra quanto o cliente economizou.
+
+---
+
+## 7. Escopo
 
 Sistema de **simulação**: o cupom é **não fiscal** e os dados são de demonstração. Para uso
 real seriam necessários emissão fiscal (NFC-e/SAT), backup automático e revisão dos acessos

@@ -134,10 +134,98 @@ function custoMedioPonderado(estoqueAtual, custoAtual, quantidade, custoNovo) {
  * Valida os itens, aplica o desconto rateado e devolve tudo o que a venda precisa
  * gravar. Recebe os produtos já carregados para não depender do armazenamento.
  */
-function prepararVenda({ itens, desconto = 0, pagamentos = [], produtosPorCodigo, permitirEstoqueNegativo = false }) {
-  if (!Array.isArray(itens) || !itens.length) throw new ErroDeNegocio('Nenhum item na venda.');
+/**
+ * Preço de um kit a partir dos preços atuais dos produtos que o compõem.
+ *
+ * O kit guarda um preço fixo OU um percentual de desconto; nos dois casos a
+ * referência é a soma dos preços de lista dos itens. Com o modo percentual, o
+ * preço do kit acompanha sozinho qualquer mudança de preço dos produtos.
+ */
+function precificarKit(kit, itensDoKit, produtosPorCodigo) {
+  const itens = itensDoKit.map((item) => {
+    const produto = produtosPorCodigo[String(item.codigo).toUpperCase()];
+    const precoUnitario = produto ? c(produto.preco_venda) : 0;
+    const quantidade = Number(item.quantidade) || 0;
+    return {
+      codigo: item.codigo,
+      descricao: produto ? produto.descricao : item.descricao || item.codigo,
+      quantidade,
+      preco_unitario: precoUnitario,
+      total_lista: c(precoUnitario * quantidade),
+      estoque: produto ? produto.estoque : 0,
+      unidade: produto ? produto.unidade : 'UN',
+      foto: produto ? produto.foto : '',
+      custo_medio: produto ? produto.custo_medio : 0,
+      existe: Boolean(produto),
+    };
+  });
 
-  const preparados = itens.map((item) => {
+  const precoLista = c(itens.reduce((s, i) => s + i.total_lista, 0));
+  const porValor = String(kit.modo_preco || 'PERCENTUAL').toUpperCase() === 'VALOR';
+
+  const precoEfetivo = porValor
+    ? c(kit.preco_venda)
+    : c(precoLista * (1 - (Number(kit.desconto_percentual) || 0) / 100));
+
+  const descontoValor = c(precoLista - precoEfetivo);
+  const descontoPercentual = precoLista > 0 ? c((descontoValor / precoLista) * 100) : 0;
+
+  return {
+    ...kit,
+    itens,
+    preco_lista: precoLista,
+    preco_efetivo: Math.max(0, precoEfetivo),
+    desconto_valor: descontoValor,
+    desconto_percentual_efetivo: descontoPercentual,
+    // Quantos kits dá para montar com o estoque atual de cada componente.
+    kits_possiveis: itens.length
+      ? Math.max(0, Math.floor(Math.min(...itens.map((i) => (i.quantidade > 0 ? i.estoque / i.quantidade : 0)))))
+      : 0,
+  };
+}
+
+/**
+ * Converte uma linha de kit nos itens que de fato saem do estoque, rateando o
+ * preço do kit entre os componentes na proporção do preço de lista de cada um.
+ * A soma dos itens fecha exatamente com o preço do kit (a sobra de centavos
+ * cai no último item).
+ */
+function expandirKit(kit, quantidadeKits) {
+  const totalKit = c(kit.preco_efetivo * quantidadeKits);
+  const base = kit.preco_lista;
+
+  const expandidos = kit.itens.map((item) => {
+    const quantidade = c(item.quantidade * quantidadeKits);
+    const participacao = base > 0 ? item.total_lista / base : 1 / kit.itens.length;
+    return {
+      codigo: item.codigo,
+      descricao: item.descricao,
+      quantidade,
+      preco_unitario: item.preco_unitario,
+      total: c(totalKit * participacao),
+      kit_id: kit.id,
+      kit_nome: kit.nome,
+    };
+  });
+
+  const soma = c(expandidos.reduce((s, i) => s + i.total, 0));
+  if (expandidos.length && soma !== totalKit) {
+    const ultimo = expandidos[expandidos.length - 1];
+    ultimo.total = c(ultimo.total + (totalKit - soma));
+  }
+
+  return expandidos;
+}
+
+/**
+ * Valida os itens, aplica o desconto rateado e devolve tudo o que a venda precisa
+ * gravar. Recebe os produtos já carregados para não depender do armazenamento.
+ */
+function prepararVenda({
+  itens = [], kits = [], desconto = 0, pagamentos = [],
+  produtosPorCodigo, kitsPorId = {}, permitirEstoqueNegativo = false,
+}) {
+  const avulsos = itens.map((item) => {
     const chave = String(item.codigo || '').trim().toUpperCase();
     const produto = produtosPorCodigo[chave];
     if (!produto) throw new ErroDeNegocio(`Produto não encontrado: ${item.codigo}`);
@@ -153,17 +241,44 @@ function prepararVenda({ itens, desconto = 0, pagamentos = [], produtosPorCodigo
     const total = c(preco * quantidade - descontoItem);
     if (total < 0) throw new ErroDeNegocio(`Desconto maior que o valor do item ${produto.descricao}.`);
 
-    return { produto, quantidade, preco, descontoItem, total };
+    return {
+      codigo: produto.codigo,
+      descricao: produto.descricao,
+      quantidade,
+      preco_unitario: preco,
+      total,
+      kit_id: 0,
+      kit_nome: '',
+    };
   });
+
+  const deKits = [];
+  kits.forEach((linha) => {
+    const kit = kitsPorId[String(linha.kit_id)];
+    if (!kit) throw new ErroDeNegocio(`Kit não encontrado: ${linha.kit_id}`);
+    if (!kit.ativo) throw new ErroDeNegocio(`Kit inativo: ${kit.nome}`);
+    if (!kit.itens.length) throw new ErroDeNegocio(`Kit sem itens: ${kit.nome}`);
+
+    const faltando = kit.itens.find((i) => !i.existe);
+    if (faltando) throw new ErroDeNegocio(`O kit ${kit.nome} usa um produto que não existe mais (${faltando.codigo}).`);
+
+    const quantidade = Number(linha.quantidade) || 1;
+    if (!(quantidade > 0)) throw new ErroDeNegocio(`Quantidade inválida para o kit ${kit.nome}.`);
+
+    expandirKit(kit, quantidade).forEach((item) => deKits.push(item));
+  });
+
+  const preparados = [...avulsos, ...deKits];
+  if (!preparados.length) throw new ErroDeNegocio('Nenhum item na venda.');
 
   if (!permitirEstoqueNegativo) {
     const necessario = {};
     preparados.forEach((p) => {
-      necessario[p.produto.codigo] = c((necessario[p.produto.codigo] || 0) + p.quantidade);
+      necessario[p.codigo] = c((necessario[p.codigo] || 0) + p.quantidade);
     });
     Object.entries(necessario).forEach(([codigo, qtd]) => {
       const produto = produtosPorCodigo[codigo];
-      if (produto.estoque < qtd) {
+      if (produto && produto.estoque < qtd) {
         throw new ErroDeNegocio(
           `Estoque insuficiente de ${produto.descricao}: disponível ${produto.estoque}, solicitado ${qtd}.`
         );
@@ -213,21 +328,24 @@ function prepararVenda({ itens, desconto = 0, pagamentos = [], produtosPorCodigo
 
   const itensFinais = preparados.map((p, indice) => {
     const totalLiquido = c(p.total * fator);
-    const custoUnitario = c(p.produto.custo_medio);
+    const produto = produtosPorCodigo[p.codigo];
+    const custoUnitario = c(produto ? produto.custo_medio : 0);
     const custo = c(custoUnitario * p.quantidade);
     custoTotal += custo;
     quantidadeItens = c(quantidadeItens + p.quantidade);
     return {
       seq: indice + 1,
-      codigo: p.produto.codigo,
-      descricao: p.produto.descricao,
+      codigo: p.codigo,
+      descricao: p.descricao,
       quantidade: p.quantidade,
-      preco_unitario: p.preco,
-      desconto: c(p.descontoItem + (p.total - totalLiquido)),
+      preco_unitario: p.preco_unitario,
+      desconto: c(p.preco_unitario * p.quantidade - totalLiquido),
       total: totalLiquido,
       custo_unitario: custoUnitario,
       custo_total: custo,
       lucro: c(totalLiquido - custo),
+      kit_id: p.kit_id || 0,
+      kit_nome: p.kit_nome || '',
     };
   });
 
@@ -524,6 +642,8 @@ module.exports = {
   situacaoEstoque,
   enriquecerProduto,
   custoMedioPonderado,
+  precificarKit,
+  expandirKit,
   prepararVenda,
   resumoDoCaixa,
   relatorioLucro,

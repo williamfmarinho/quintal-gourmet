@@ -158,6 +158,152 @@ async function fichaProduto(repo, codigo) {
 }
 
 /* ------------------------------------------------------------------ *
+ * Kits — conjuntos de produtos vendidos com preço fechado ou desconto
+ * ------------------------------------------------------------------ */
+
+/** Carrega os kits já precificados pelos preços atuais dos produtos. */
+async function listarKits(repo, filtros = {}) {
+  const [kits, itens, produtos] = await Promise.all([
+    repo.listar('kits', { ordem: { campo: 'id' } }),
+    repo.listar('kit_itens', { ordem: { campo: 'seq' } }),
+    repo.listar('produtos'),
+  ]);
+
+  const produtosPorCodigo = {};
+  produtos.forEach((p) => { produtosPorCodigo[String(p.codigo).toUpperCase()] = p; });
+
+  const itensPorKit = new Map();
+  itens.forEach((item) => {
+    const lista = itensPorKit.get(item.kit_id) || [];
+    lista.push(item);
+    itensPorKit.set(item.kit_id, lista);
+  });
+
+  let lista = kits.map((kit) => calc.precificarKit(
+    kit,
+    (itensPorKit.get(kit.id) || []).sort((a, b) => a.seq - b.seq),
+    produtosPorCodigo
+  ));
+
+  if (filtros.somenteAtivos === true || filtros.somenteAtivos === 'true') {
+    lista = lista.filter((k) => k.ativo);
+  }
+
+  const termo = String(filtros.termo || '').trim().toUpperCase();
+  if (termo) {
+    lista = lista.filter((k) => (
+      k.nome.toUpperCase().includes(termo)
+      || String(k.codigo).toUpperCase().includes(termo)
+      || k.itens.some((i) => i.descricao.toUpperCase().includes(termo) || String(i.codigo).toUpperCase().includes(termo))
+    ));
+  }
+
+  return lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+
+async function exigirKit(repo, id) {
+  const kits = await listarKits(repo);
+  const kit = kits.find((k) => String(k.id) === String(id));
+  if (!kit) throw new ErroDeNegocio('Kit não encontrado.', 404);
+  return kit;
+}
+
+async function salvarKit(repo, dados, sessao) {
+  const nome = String(dados.nome || '').trim();
+  if (!nome) throw new ErroDeNegocio('Dê um nome ao kit.');
+
+  const itensRecebidos = (Array.isArray(dados.itens) ? dados.itens : [])
+    .map((item) => ({
+      codigo: String(item.codigo || '').trim().toUpperCase(),
+      quantidade: Number(item.quantidade) || 0,
+    }))
+    .filter((item) => item.codigo);
+
+  const distintos = new Set(itensRecebidos.map((i) => i.codigo));
+  if (distintos.size < 2) throw new ErroDeNegocio('Um kit precisa de pelo menos 2 produtos diferentes.');
+  if (itensRecebidos.some((i) => !(i.quantidade > 0))) {
+    throw new ErroDeNegocio('A quantidade de cada produto do kit deve ser maior que zero.');
+  }
+
+  const modo = String(dados.modo_preco || 'PERCENTUAL').toUpperCase() === 'VALOR' ? 'VALOR' : 'PERCENTUAL';
+  const precoFixo = c(dados.preco_venda);
+  const descontoPercentual = c(dados.desconto_percentual);
+
+  if (modo === 'VALOR' && precoFixo < 0) throw new ErroDeNegocio('Preço do kit inválido.');
+  if (modo === 'PERCENTUAL' && (descontoPercentual < 0 || descontoPercentual > 100)) {
+    throw new ErroDeNegocio('O desconto do kit deve ficar entre 0% e 100%.');
+  }
+
+  // Confere que todos os produtos existem antes de gravar qualquer coisa.
+  const produtos = await repo.listar('produtos', { onde: { codigo: { in: [...distintos] } } });
+  const encontrados = new Set(produtos.map((p) => String(p.codigo).toUpperCase()));
+  const ausente = [...distintos].find((codigo) => !encontrados.has(codigo));
+  if (ausente) throw new ErroDeNegocio(`Produto não encontrado: ${ausente}`);
+
+  const porCodigo = {};
+  produtos.forEach((p) => { porCodigo[String(p.codigo).toUpperCase()] = p; });
+
+  const momento = agora();
+
+  const salvo = await repo.transacao(async (tx) => {
+    let kit;
+
+    if (dados.id) {
+      kit = (await tx.listar('kits', { onde: { id: Number(dados.id) } }))[0];
+      if (!kit) throw new ErroDeNegocio('Kit não encontrado.', 404);
+      kit = await tx.atualizar('kits', { id: kit.id }, {
+        nome,
+        modo_preco: modo,
+        preco_venda: precoFixo,
+        desconto_percentual: descontoPercentual,
+        ativo: dados.ativo === undefined ? kit.ativo : Boolean(dados.ativo),
+        observacao: String(dados.observacao || '').trim(),
+        atualizado_em: momento,
+      });
+      await tx.remover('kit_itens', { kit_id: kit.id });
+    } else {
+      const existentes = await tx.listar('kits');
+      const proximo = existentes.reduce((maior, k) => Math.max(maior, Number(k.id) || 0), 0) + 1;
+      kit = await tx.inserir('kits', {
+        codigo: `KIT${String(proximo).padStart(3, '0')}`,
+        nome,
+        modo_preco: modo,
+        preco_venda: precoFixo,
+        desconto_percentual: descontoPercentual,
+        ativo: dados.ativo === undefined ? true : Boolean(dados.ativo),
+        observacao: String(dados.observacao || '').trim(),
+        criado_em: momento,
+        atualizado_em: momento,
+      });
+    }
+
+    for (let i = 0; i < itensRecebidos.length; i += 1) {
+      const item = itensRecebidos[i];
+      await tx.inserir('kit_itens', {
+        kit_id: kit.id,
+        seq: i + 1,
+        codigo: item.codigo,
+        descricao: porCodigo[item.codigo].descricao,
+        quantidade: item.quantidade,
+      });
+    }
+
+    return kit;
+  });
+
+  return exigirKit(repo, salvo.id);
+}
+
+async function excluirKit(repo, id) {
+  const kit = await exigirKit(repo, id);
+  await repo.transacao(async (tx) => {
+    await tx.remover('kit_itens', { kit_id: kit.id });
+    await tx.remover('kits', { id: kit.id });
+  });
+  return { ok: true, kit: kit.nome };
+}
+
+/* ------------------------------------------------------------------ *
  * Caixa
  * ------------------------------------------------------------------ */
 
@@ -271,16 +417,31 @@ async function registrarVenda(repo, dados, sessao) {
   const caixa = await caixaAbertoDe(repo, sessao.usuario);
   if (exigirCaixa && !caixa) throw new ErroDeNegocio('Abra o caixa antes de lançar vendas.', 409);
 
-  const codigos = [...new Set((dados.itens || []).map((i) => String(i.codigo || '').trim().toUpperCase()))];
-  const produtos = await repo.listar('produtos', { onde: { codigo: { in: codigos } } });
+  // Os kits entram já precificados pelos preços atuais — o cliente nunca manda preço de kit.
+  const linhasDeKit = Array.isArray(dados.kits) ? dados.kits : [];
+  const kitsPorId = {};
+  if (linhasDeKit.length) {
+    const kits = await listarKits(repo);
+    kits.forEach((kit) => { kitsPorId[String(kit.id)] = kit; });
+  }
+
+  const codigos = new Set((dados.itens || []).map((i) => String(i.codigo || '').trim().toUpperCase()));
+  linhasDeKit.forEach((linha) => {
+    const kit = kitsPorId[String(linha.kit_id)];
+    (kit ? kit.itens : []).forEach((item) => codigos.add(String(item.codigo).toUpperCase()));
+  });
+
+  const produtos = await repo.listar('produtos', { onde: { codigo: { in: [...codigos] } } });
   const produtosPorCodigo = {};
   produtos.forEach((p) => { produtosPorCodigo[String(p.codigo).toUpperCase()] = p; });
 
   const preparada = calc.prepararVenda({
     itens: dados.itens,
+    kits: linhasDeKit,
     desconto: dados.desconto,
     pagamentos: dados.pagamentos,
     produtosPorCodigo,
+    kitsPorId,
     permitirEstoqueNegativo: (config.permitir_estoque_negativo || 'NÃO') === 'SIM',
   });
 
@@ -653,6 +814,9 @@ module.exports = {
   categorias,
   salvarProduto,
   fichaProduto,
+  listarKits,
+  salvarKit,
+  excluirKit,
   caixaAbertoDe,
   resumoCaixa,
   abrirCaixa,

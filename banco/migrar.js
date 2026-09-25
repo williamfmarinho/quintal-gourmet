@@ -37,10 +37,12 @@ const CARGA = [
   ['SAIDAS', 'saidas'],
   ['AJUSTES', 'ajustes'],
   ['MOV_CAIXA', 'mov_caixa'],
+  ['KITS', 'kits'],
+  ['KIT_ITENS', 'kit_itens'],
 ];
 
 const TABELAS = CARGA.map(([, tabela]) => tabela);
-const COM_SEQUENCIA = ['caixas', 'vendas', 'pagamentos', 'entradas', 'saidas', 'ajustes', 'mov_caixa'];
+const COM_SEQUENCIA = ['caixas', 'vendas', 'pagamentos', 'entradas', 'saidas', 'ajustes', 'mov_caixa', 'kits'];
 
 async function criarEsquema(pool) {
   const sql = fs.readFileSync(ARQUIVO_ESQUEMA, 'utf8');

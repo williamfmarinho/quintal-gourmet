@@ -296,6 +296,37 @@ rotas.get('/exportar', auth.exigirLogin, auth.exigirAdmin, responder(async (req,
   res.end();
 }));
 
+/**
+ * Batida de atividade: além de ler, GRAVA no banco.
+ *
+ * O plano gratuito do Supabase pausa projetos sem atividade suficiente, e uma
+ * leitura pequena por dia não bastou. A escrita deixa rastro — dá para conferir
+ * quando foi o último ping e quantos já aconteceram — e conta como atividade real.
+ */
+rotas.get('/ping', responder(async (req) => {
+  const config = await req.repo.config();
+  const anterior = config.ultimo_ping || '';
+  const total = (Number(config.total_pings) || 0) + 1;
+  const momento = new Date().toISOString();
+
+  await req.repo.transacao((tx) => tx.definirConfig({
+    ultimo_ping: momento,
+    total_pings: String(total),
+    origem_ultimo_ping: String(req.headers['user-agent'] || 'desconhecida').slice(0, 80),
+  }));
+
+  return {
+    ok: true,
+    banco: modoConfigurado(),
+    agora: momento,
+    ping_anterior: anterior,
+    horas_desde_o_anterior: anterior
+      ? Math.round(((Date.now() - new Date(anterior).getTime()) / 3600000) * 10) / 10
+      : null,
+    total_pings: total,
+  };
+}));
+
 /** Diagnóstico simples — útil para conferir a implantação. */
 rotas.get('/saude', responder(async (req) => {
   const produtos = await req.repo.listar('produtos', { limite: 1 });

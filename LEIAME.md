@@ -70,10 +70,26 @@ Depois do deploy, confira `https://SEU-PROJETO.vercel.app/api/saude` — deve re
 > apenas na sua máquina e nas variáveis de ambiente da Vercel.
 
 > **Pausa automática do Supabase.** No plano gratuito, o banco é pausado após 7 dias sem
-> uso e o site passa a responder *"Banco de dados indisponível"*. Para evitar, o `vercel.json`
-> agenda um acesso diário a `/api/saude` (09h de Brasília), que mantém o projeto ativo. Se
-> mesmo assim pausar (por exemplo, se o agendamento for removido), basta clicar em
-> **Restore project** no painel do Supabase — os dados não se perdem.
+> atividade suficiente e o site passa a responder *"Banco de dados indisponível"*.
+>
+> Quem mantém o projeto acordado é a rotina do GitHub Actions
+> (`.github/workflows/manter-banco-ativo.yml`), que chama `/api/ping` **a cada 30 minutos**.
+> Essa rota **grava** no banco (`ultimo_ping` e `total_pings` na tabela `config`), então a
+> atividade é real e dá para auditar:
+>
+> ```bash
+> curl https://quintal-gourmet.vercel.app/api/ping
+> ```
+>
+> A resposta diz há quantas horas foi o ping anterior e quantos já aconteceram. O cron diário
+> da Vercel continua como segunda linha de defesa — sozinho ele não bastou, porque o plano
+> Hobby só permite uma execução por dia.
+>
+> Se mesmo assim pausar, clique em **Restore project** no painel do Supabase: os dados não se
+> perdem. Para uso real, o plano Pro (US$ 25/mês) nunca pausa e ainda inclui backups diários.
+>
+> O GitHub desativa rotinas agendadas em repositórios sem commits por 60 dias — se isso
+> acontecer, ele avisa por e-mail e basta reativar em *Actions*.
 
 
 ### Recomeçar o estoque do zero

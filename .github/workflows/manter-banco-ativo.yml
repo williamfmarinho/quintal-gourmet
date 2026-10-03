@@ -1,0 +1,38 @@
+# Mantém o banco do Supabase acordado.
+#
+# O plano gratuito pausa o projeto depois de 7 dias sem atividade suficiente, e o
+# cron da Vercel no plano Hobby só permite uma execução por dia — o que não bastou.
+# Esta rotina bate no sistema a cada 30 minutos; como a rota /api/ping grava no
+# banco, a atividade fica registrada e verificável.
+
+name: Manter banco ativo
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # permite rodar na hora pelo painel do GitHub
+
+concurrency:
+  group: manter-banco-ativo
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Bater no sistema
+        run: |
+          resposta=$(curl -sS --max-time 60 --retry 3 --retry-delay 10 --retry-all-errors \
+            -w '\nHTTP:%{http_code}' https://quintal-gourmet.vercel.app/api/ping)
+
+          codigo=$(printf '%s' "$resposta" | tail -n1 | cut -d: -f2)
+          corpo=$(printf '%s' "$resposta" | sed '$d')
+
+          echo "$corpo"
+
+          if [ "$codigo" != "200" ]; then
+            echo "::error::O sistema respondeu HTTP $codigo — o banco pode estar pausado."
+            exit 1
+          fi
+          echo "::notice::Banco acordado. $corpo"
